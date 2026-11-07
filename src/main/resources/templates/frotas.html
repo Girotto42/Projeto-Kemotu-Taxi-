@@ -2181,9 +2181,36 @@
       Nunca coloque senhas ou tokens neste HTML.
     */
     const CONFIG = Object.freeze({
-      WHATSAPP: "",
-      ESF_URL: ""
+      WHATSAPP: "5518997273666",
+      ESF_URL: "http://localhost:8080"
     });
+
+      // Função para buscar dados do back-end ao carregar a página
+      async function carregarDadosDoBanco() {
+        try {
+          // Busca os veículos cadastrados na sua API do Spring Boot
+          const respostaVeiculos = await fetch(`${CONFIG.ESF_URL}/api/veiculos`);
+          if (respostaVeiculos.ok) {
+            const veiculos = await respostaVeiculos.json();
+            console.log("Veículos carregados do MySQL:", veiculos);
+            // Aqui você pode atualizar o HTML se quiser exibir a quantidade real de veículos
+          }
+
+          // Busca os funcionários cadastrados
+          const respostaFuncionarios = await fetch(`${CONFIG.ESF_URL}/api/funcionarios`);
+          if (respostaFuncionarios.ok) {
+            const funcionarios = await respostaFuncionarios.json();
+            console.log("Funcionários carregados do MySQL:", funcionarios);
+          }
+        } catch (erro) {
+          console.error("Erro ao conectar com o back-end Spring Boot:", erro);
+        }
+      }
+
+      // Executa a função assim que a página é carregada
+      document.addEventListener("DOMContentLoaded", () => {
+        carregarDadosDoBanco();
+      });
 
     document.documentElement.classList.add("js");
 
