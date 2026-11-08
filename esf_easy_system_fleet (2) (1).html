@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESF - Easy System Fleet | Kemotu Táxi</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              yellow: '#F59E0B',
+              hoverYellow: '#D97706',
+              gold: '#FACC15',
+              dark: '#0A0A0C',
+              surface: '#121216',
+              card: '#18181F',
+              border: '#272732',
+              muted: '#A1A1AA'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0A0C;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #272732;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #F59E0B;
+    }
+    
+    .bg-grid {
+      background-image: radial-gradient(rgba(245, 158, 11, 0.12) 1px, transparent 0);
+      background-size: 28px 28px;
+    }
+
+    .glass-panel {
+      background: rgba(24, 24, 31, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .glass-input {
+      background: rgba(10, 10, 12, 0.9);
+      border: 1px solid rgba(39, 39, 50, 0.8);
+    }
+    .glass-input:focus {
+      border-color: #F59E0B;
+      outline: none;
+      box-shadow: 0 0 0 1px #F59E0B;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-slate-100 font-sans antialiased min-h-screen selection:bg-brand-yellow selection:text-black">
+
+  <!-- ========================================== -->
+  <!-- 1. AUTHENTICATION CONTAINER (STARTING VIEW)-->
+  <!-- ========================================== -->
+  <div id="auth-container" class="min-h-screen bg-brand-dark bg-grid flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <!-- Ambient Glow Effects -->
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-yellow/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Auth Card -->
+    <div class="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
+      
+      <!-- ESF Vector Logo Container -->
+      <div id="auth-logo-wrapper" class="flex flex-col items-center mb-6">
+        <!-- SVG Logo injected via Javascript -->
+      </div>
+
+      <!-- System Subtitle -->
+      <div class="flex items-center justify-center gap-2 mb-6">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Kemotu Táxi • Gestão de Frota</span>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="grid grid-cols-2 gap-1 p-1 bg-zinc-950/80 rounded-2xl border border-zinc-800 mb-5">
+        <button id="tab-login-btn" onclick="alternarAbaAutenticacao('login')" class="py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 bg-brand-yellow text-black shadow">
+          <i class="fa-solid fa-right-to-bracket"></i> Entrar
+        </button>
+        <button id="tab-register-btn" onclick="alternarAbaAutenticacao('register')" class="py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-user-plus"></i> Criar Conta
+        </button>
+      </div>
+
+      <!-- Dynamic Alert Banner -->
+      <div id="auth-alert" class="hidden mb-4 p-3 bg-red-950/70 border border-red-500/50 rounded-xl text-xs text-red-300 flex items-center gap-2.5">
+        <i class="fa-solid fa-circle-exclamation text-red-400 text-sm"></i>
+        <span id="auth-alert-msg" class="flex-1"></span>
+        <button onclick="ocultarAlertaAutenticacao()" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Form: Login -->
+      <form id="form-login" onsubmit="executarLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">E-mail Corporativo</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-500">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <input type="email" id="login-email" required class="w-full pl-10 pr-4 py-3 glass-input rounded-xl text-xs text-white placeholder-zinc-500" placeholder="seu.email@kemotutaxi.com.br">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400">Senha de Acesso</label>
+            <button type="button" onclick="abrirModalEsqueceuSenha()" class="text-[11px] text-brand-yellow hover:underline">Esqueceu a senha?</button>
+          </div>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-500">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input type="password" id="login-password" required class="w-full pl-10 pr-10 py-3 glass-input rounded-xl text-xs text-white placeholder-zinc-500" placeholder="••••••••">
+            <button type="button" onclick="alternarVisibilidadeSenha('login-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-zinc-500 hover:text-white">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="w-full py-3.5 bg-brand-yellow hover:bg-brand-hoverYellow text-black font-bold rounded-xl shadow-lg shadow-brand-yellow/20 transition flex items-center justify-center gap-2 cursor-pointer mt-2">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Acessar Painel de Gestão</span>
+        </button>
+      </form>
+
+      <!-- Form: Register (Criar Conta) -->
+      <form id="form-register" onsubmit="executarCadastro(event)" class="hidden space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Nome Completo</label>
+          <input type="text" id="reg-nome" required class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="Ex: Roberto Mendes">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">E-mail</label>
+            <input type="email" id="reg-email" required class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="nome@kemotutaxi.com.br">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">CPF</label>
+            <input type="text" id="reg-cpf" required class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white font-mono" placeholder="000.000.000-00">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Cargo / Função</label>
+          <select id="reg-cargo" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white">
+            <option value="Gestor de Frota">Gestor de Frota</option>
+            <option value="Administrador da Frota">Administrador da Frota</option>
+            <option value="Analista Operacional">Analista Operacional</option>
+            <option value="Supervisão de Manutenção">Supervisão de Manutenção</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Senha</label>
+            <input type="password" id="reg-password" required minlength="3" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="••••••••">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Confirmar Senha</label>
+            <input type="password" id="reg-confirm" required minlength="3" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="••••••••">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="reg-lgpd" required class="rounded border-zinc-700 bg-zinc-900 text-brand-yellow focus:ring-brand-yellow cursor-pointer">
+          <label for="reg-lgpd" class="text-[10px] text-zinc-400 cursor-pointer">Concordo com os termos da LGPD e Kemotu Táxi.</label>
+        </div>
+
+        <button type="submit" id="btn-register-submit" class="w-full py-3 bg-brand-yellow hover:bg-brand-hoverYellow text-black font-bold rounded-xl shadow-lg shadow-brand-yellow/20 transition flex items-center justify-center gap-2 mt-2 cursor-pointer">
+          <i class="fa-solid fa-user-check"></i>
+          <span>Cadastrar e Entrar</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Rodapé -->
+    <p class="text-center text-[11px] text-zinc-500 mt-6 font-mono">
+      ESF v2.5 • Faculdade de Tecnologia de Assis (FATEC) • 2026
+    </p>
+
+    <!-- Modal de Recuperação de Senha -->
+    <div id="forgot-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-key text-brand-yellow"></i> Recuperar Senha
+          </h4>
+          <button onclick="fecharModalEsqueceuSenha()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p class="text-xs text-zinc-400 mb-4">Informe o e-mail cadastrado para enviarmos instruções de recuperação.</p>
+        <form onsubmit="tratarEnvioEsqueceuSenha(event)" class="space-y-4">
+          <input type="email" required class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="seu.email@kemotutaxi.com.br">
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="fecharModalEsqueceuSenha()" class="px-3.5 py-2 bg-zinc-800 text-xs text-zinc-300 font-semibold rounded-xl">Cancelar</button>
+            <button type="submit" class="px-4 py-2 bg-brand-yellow text-black text-xs font-bold rounded-xl shadow">Enviar Link</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 2. PAINEL PRINCIPAL DO SOFTWARE -->
+  <!-- ========================================== -->
+  <div id="main-dashboard-app" class="hidden min-h-screen flex flex-col md:flex-row overflow-hidden bg-brand-dark">
+    
+    <!-- Barra Lateral de Navegação (Sidebar) -->
+    <aside id="main-sidebar" class="w-full md:w-64 bg-brand-surface border-r border-brand-border flex flex-col shrink-0">
+      <!-- Cabeçalho do Menu com a Logo Oficial ESF -->
+      <div class="p-4 border-b border-brand-border flex items-center justify-between bg-black/40">
+        <div id="sidebar-logo-wrapper" class="w-44 flex justify-center py-1">
+          <!-- Logo Exata SVG Renderizada aqui -->
+        </div>
+        <button onclick="alternarSidebarMobile()" class="md:hidden text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Perfil do Usuário Logado -->
+      <div class="p-4 border-b border-brand-border/60 bg-zinc-950/40 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-yellow/10 border border-brand-yellow/30 flex items-center justify-center text-brand-yellow font-bold text-sm">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p id="user-display-name" class="text-xs font-bold text-white truncate">Gestor da Frota</p>
+          <p id="user-display-role" class="text-[10px] text-brand-yellow truncate font-medium">Kemotu Táxi</p>
+        </div>
+      </div>
+
+      <!-- Links de Navegação (100% PT-BR) -->
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+        <button onclick="alternarAba('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition bg-brand-yellow text-black shadow">
+          <i class="fa-solid fa-chart-pie text-sm"></i> Painel Geral (KPIs)
+        </button>
+        <button onclick="alternarAba('veiculos')" id="nav-veiculos" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition">
+          <i class="fa-solid fa-taxi text-sm"></i> Gestão de Veículos (RF02)
+        </button>
+        <button onclick="alternarAba('funcionarios')" id="nav-funcionarios" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition">
+          <i class="fa-solid fa-users text-sm"></i> Equipe & Alocações (RF01/03)
+        </button>
+        <button onclick="alternarAba('manutencoes')" id="nav-manutencoes" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition">
+          <i class="fa-solid fa-wrench text-sm"></i> Manutenções (RF06)
+        </button>
+        <button onclick="alternarAba('obrigacoes')" id="nav-obrigacoes" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition">
+          <i class="fa-solid fa-file-invoice-dollar text-sm"></i> Serviços Legais & Multas (RF05)
+        </button>
+        <button onclick="alternarAba('relatorios')" id="nav-relatorios" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition">
+          <i class="fa-solid fa-chart-line text-sm"></i> Relatórios Operacionais
+        </button>
+      </nav>
+
+      <!-- Botão de Sair -->
+      <div class="p-3 border-t border-brand-border">
+        <button onclick="executarLogout()" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-red-950/40 border border-red-500/30 text-red-400 hover:bg-red-900/60 hover:text-red-200 transition">
+          <i class="fa-solid fa-power-off"></i> Sair do Sistema
+        </button>
+      </div>
+    </aside>
+
+    <!-- Área Principal de Conteúdo -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Barra Superior -->
+      <header class="h-16 bg-brand-surface border-b border-brand-border px-4 md:px-8 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <h2 id="header-page-title" class="text-sm font-bold text-white uppercase tracking-wider">Painel Geral • Indicadores da Frota</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="hidden sm:inline-flex px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-[11px] font-bold text-brand-yellow">
+            <i class="fa-solid fa-shield-halved mr-1.5"></i> Conformidade LGPD
+          </span>
+          <button onclick="executarLogout()" class="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900">
+            <i class="fa-solid fa-sign-out-alt"></i> Sair
+          </button>
+        </div>
+      </header>
+
+      <!-- Área Dinâmica das Abas -->
+      <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-brand-dark bg-grid">
+        <div id="tab-content-area" class="max-w-7xl mx-auto space-y-6">
+          <!-- Renderizado via JavaScript em Português -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Container Global de Modais -->
+  <div id="modal-container" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- 3. MOTOR JAVASCRIPT EM PORTUGUÊS (PT-BR) -->
+  <!-- ========================================== -->
+  <script>
+    // Inicialização do Banco de Dados em Memória (Sem usuários iniciais pré-cadastrados)
+    const bancoDadosInicial = {
+      veiculos: [
+        { id: 1, placa: 'ABC1D23', marca: 'Chevrolet', modelo: 'Onix Sedan', ano: 2023, portas: 4, km: 45200, situacao: 'Em uso' },
+        { id: 2, placa: 'KMT4E56', marca: 'Toyota', modelo: 'Corolla Hybrid', ano: 2024, portas: 4, km: 18500, situacao: 'Disponível' },
+        { id: 3, placa: 'RIO9F88', marca: 'Hyundai', modelo: 'HB20S', ano: 2022, portas: 4, km: 78900, situacao: 'Em manutenção' },
+        { id: 4, placa: 'FTE3A11', marca: 'Volkswagen', modelo: 'Virtus', ano: 2023, portas: 4, km: 32100, situacao: 'Em uso' },
+        { id: 5, placa: 'KMT9Z99', marca: 'Nissan', modelo: 'V-Drive', ano: 2021, portas: 4, km: 112000, situacao: 'Inativo' }
+      ],
+      funcionarios: [
+        { id: 1, nome: 'Carlos Eduardo Silva', cpf: '123.456.789-00', cargo: 'Motorista Titular', telefone: '(18) 99712-3456', email: 'carlos@kemotutaxi.com.br', situacao: 'Ativo' },
+        { id: 2, nome: 'Ana Paula Ferreira', cpf: '234.567.890-11', cargo: 'Motorista Noturno', telefone: '(18) 99654-9876', email: 'ana.paula@kemotutaxi.com.br', situacao: 'Ativo' },
+        { id: 3, nome: 'Roberto Mendes', cpf: '345.678.901-22', cargo: 'Gestor de Frota', telefone: '(18) 99823-1122', email: 'roberto.mendes@kemotutaxi.com.br', situacao: 'Ativo' }
+      ],
+      alocacoes: [
+        { id: 1, id_funcionario: 1, id_veiculo: 1, data_inicio: '2024-01-15', data_fim: null, situacao: 'Ativa' },
+        { id: 2, id_funcionario: 2, id_veiculo: 4, data_inicio: '2024-02-01', data_fim: null, situacao: 'Ativa' }
+      ],
+      manutencoes: [
+        { id: 1, id_veiculo: 3, tipo: 'Corretiva', descricao: 'Troca da caixa de câmbio e pastilhas de freio', data_manutencao: '2026-11-01', data_prevista: '2026-11-08', km: 78900, valor: 3450.00, situacao: 'Em andamento' },
+        { id: 2, id_veiculo: 1, tipo: 'Preventiva', descricao: 'Troca de óleo, filtro de ar e alinhamento', data_manutencao: '2026-10-10', data_prevista: '2026-10-10', km: 40000, valor: 650.00, situacao: 'Concluída' },
+        { id: 3, id_veiculo: 2, tipo: 'Preventiva', descricao: 'Revisão geral de 20.000 KM', data_manutencao: null, data_prevista: '2026-11-20', km: 20000, valor: 890.00, situacao: 'Programada' }
+      ],
+      obrigacoes: [
+        { id: 1, id_veiculo: 1, tipo: 'IPVA 2026', exercicio: 2026, valor: 1850.00, data_vencimento: '2026-03-15', data_pagamento: '2026-03-10', situacao: 'Pago' },
+        { id: 2, id_veiculo: 3, tipo: 'Licenciamento Anual', exercicio: 2026, valor: 160.00, data_vencimento: '2026-11-12', data_pagamento: null, situacao: 'Pendente' },
+        { id: 3, id_veiculo: 4, tipo: 'Multa Excesso de Velocidade', exercicio: 2026, valor: 195.23, data_vencimento: '2026-10-25', data_pagamento: null, situacao: 'Vencido' },
+        { id: 4, id_veiculo: 2, tipo: 'Vistoria Semestral TÁXI', exercicio: 2026, valor: 280.00, data_vencimento: '2026-11-30', data_pagamento: null, situacao: 'Pendente' }
+      ]
+    };
+
+    // Carregamento do LocalStorage (Inicia sem usuários pré-cadastrados se não houver dados salvos)
+    let db = JSON.parse(localStorage.getItem('esf_db_store')) || bancoDadosInicial;
+    let usuariosCadastrados = JSON.parse(localStorage.getItem('esf_users_store')) || [];
+    let usuarioAtual = JSON.parse(localStorage.getItem('esf_current_user')) || null;
+    let abaAtiva = 'dashboard';
+    let graficoAtivo = null;
+
+    function salvarDB() {
+      localStorage.setItem('esf_db_store', JSON.stringify(db));
+    }
+    function salvarUsuarios() {
+      localStorage.setItem('esf_users_store', JSON.stringify(usuariosCadastrados));
+    }
+
+    // --- GERADOR DA LOGO OFICIAL ESF EM SVG --- //
+    function obterLogoESFSVG(tamanho = 'normal') {
+      const classeLargura = tamanho === 'large' ? 'w-72 sm:w-80' : 'w-44';
+      return `
+        <div class="flex flex-col items-center justify-center select-none ${classeLargura}">
+          <svg viewBox="0 0 500 270" class="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gradienteAmarelo" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFD700" />
+                <stop offset="60%" stop-color="#F59E0B" />
+                <stop offset="100%" stop-color="#D97706" />
+              </linearGradient>
+            </defs>
+
+            <!-- Arco Superior Amarelo com Pista -->
+            <path d="M 148 90 C 230 18, 390 10, 452 84 C 472 108, 470 132, 388 130 C 438 118, 442 88, 400 58 C 340 16, 220 28, 148 90 Z" fill="url(#gradienteAmarelo)" />
+            
+            <!-- Pista de Rodovia Preta e Branca -->
+            <path d="M 292 66 C 360 20, 440 43, 432 106" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+            <path d="M 292 66 C 360 20, 440 43, 432 106" fill="none" stroke="#000000" stroke-width="6" stroke-dasharray="10 8" />
+
+            <!-- Marcador de Mapa (Pin GPS) no Topo -->
+            <g transform="translate(396, 30)">
+              <path d="M 20 0 C 8.9 0 0 8.9 0 20 C 0 35 20 54 20 54 C 20 54 40 35 40 20 C 40 8.9 31.1 0 20 0 Z" fill="url(#gradienteAmarelo)" />
+              <circle cx="20" cy="18" r="7" fill="#000000" />
+            </g>
+
+            <!-- Letra 'E' com Linhas de Velocidade -->
+            <polygon points="50,108 80,108 75,120 40,120" fill="url(#gradienteAmarelo)" />
+            <polygon points="35,126 70,126 65,138 26,138" fill="url(#gradienteAmarelo)" />
+            <path d="M 12 144 L 180 144 L 170 178 L 72 178 L 80 158 L 155 158 L 160 144 L 12 144 Z" fill="url(#gradienteAmarelo)" />
+            <path d="M 68 84 L 195 84 L 182 116 L 115 116 L 110 130 L 175 130 L 168 146 L 98 146 L 88 178 L 190 178 L 178 206 L 30 206 Z" fill="url(#gradienteAmarelo)" />
+
+            <!-- Letra 'S' em Branco Inclinações -->
+            <path d="M 275 84 L 320 84 C 342 84, 350 94, 344 108 C 340 118, 328 124, 310 128 C 335 134, 338 148, 330 168 C 322 190, 302 206, 260 206 L 178 206 L 190 176 L 255 176 C 275 176, 283 170, 287 160 C 291 150, 285 144, 265 144 L 236 144 C 205 144, 202 126, 210 110 C 218 88, 240 84, 275 84 Z" fill="#FFFFFF" />
+
+            <!-- Letra 'F' em Amarelo -->
+            <path d="M 320 84 L 425 84 L 413 114 L 360 114 L 352 134 L 400 134 L 388 162 L 342 162 L 328 206 L 290 206 Z" fill="url(#gradienteAmarelo)" />
+
+            <!-- Texto Rebaixado: "Easy System Fleet" -->
+            <text x="50" y="240" font-family="'Segoe UI', Roboto, sans-serif" font-weight="900" font-style="italic" font-size="36">
+              <tspan fill="url(#gradienteAmarelo)">Easy </tspan>
+              <tspan fill="#FFFFFF">System </tspan>
+              <tspan fill="url(#gradienteAmarelo)">Fleet</tspan>
+            </text>
+
+            <!-- Curva Amarela Inferior -->
+            <path d="M 78 258 C 200 252, 360 247, 435 252 C 445 253, 300 256, 78 258 Z" fill="url(#gradienteAmarelo)" />
+          </svg>
+        </div>
+      `;
+    }
+
+    // --- CARREGAMENTO INICIAL DO SISTEMA --- //
+    window.onload = function() {
+      // Injetar a mesma logo exata na tela de Login e no Menu Lateral Interno
+      document.getElementById('auth-logo-wrapper').innerHTML = obterLogoESFSVG('large');
+      document.getElementById('sidebar-logo-wrapper').innerHTML = obterLogoESFSVG('normal');
+
+      // Controlar exibição inicial: sempre verificar autenticação
+      if (usuarioAtual) {
+        exibirPainelPrincipal();
+      } else {
+        exibirTelaLogin();
+      }
+    };
+
+    function exibirTelaLogin() {
+      document.getElementById('auth-container').classList.remove('hidden');
+      document.getElementById('main-dashboard-app').classList.add('hidden');
+    }
+
+    function exibirPainelPrincipal() {
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('main-dashboard-app').classList.remove('hidden');
+      
+      // Atualizar dados do usuário no menu lateral
+      document.getElementById('user-display-name').innerText = usuarioAtual.nome;
+      document.getElementById('user-display-role').innerText = usuarioAtual.cargo;
+
+      alternarAba(abaAtiva);
+    }
+
+    // --- LÓGICA DE AUTENTICAÇÃO E CADASTRO --- //
+    function alternarAbaAutenticacao(aba) {
+      ocultarAlertaAutenticacao();
+      const btnLogin = document.getElementById('tab-login-btn');
+      const btnRegistro = document.getElementById('tab-register-btn');
+      const formLogin = document.getElementById('form-login');
+      const formRegistro = document.getElementById('form-register');
+
+      if (aba === 'login') {
+        btnLogin.className = 'py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 bg-brand-yellow text-black shadow';
+        btnRegistro.className = 'py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 text-zinc-400 hover:text-white';
+        formLogin.classList.remove('hidden');
+        formRegistro.classList.add('hidden');
+      } else {
+        btnRegistro.className = 'py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 bg-brand-yellow text-black shadow';
+        btnLogin.className = 'py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 text-zinc-400 hover:text-white';
+        formRegistro.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+      }
+    }
+
+    function exibirAlertaAutenticacao(msg) {
+      const alerta = document.getElementById('auth-alert');
+      document.getElementById('auth-alert-msg').innerText = msg;
+      alerta.classList.remove('hidden');
+    }
+
+    function ocultarAlertaAutenticacao() {
+      document.getElementById('auth-alert').classList.add('hidden');
+    }
+
+    function alternarVisibilidadeSenha(idCampo, btn) {
+      const campo = document.getElementById(idCampo);
+      if (campo.type === 'password') {
+        campo.type = 'text';
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+      } else {
+        campo.type = 'password';
+        btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+      }
+    }
+
+    function executarLogin(e) {
+      e.preventDefault();
+      ocultarAlertaAutenticacao();
+
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const senha = document.getElementById('login-password').value;
+
+      if (usuariosCadastrados.length === 0) {
+        exibirAlertaAutenticacao('Nenhuma conta encontrada. Clique em "Criar Conta" para se cadastrar.');
+        return;
+      }
+
+      const usuarioEncontrado = usuariosCadastrados.find(u => u.email.toLowerCase() === email && u.senha === senha);
+
+      if (usuarioEncontrado) {
+        usuarioAtual = { nome: usuarioEncontrado.nome, email: usuarioEncontrado.email, cargo: usuarioEncontrado.cargo };
+        localStorage.setItem('esf_current_user', JSON.stringify(usuarioAtual));
+        exibirPainelPrincipal();
+      } else {
+        exibirAlertaAutenticacao('E-mail ou senha incorretos. Por favor, tente novamente.');
+      }
+    }
+
+    function executarCadastro(e) {
+      e.preventDefault();
+      ocultarAlertaAutenticacao();
+
+      const nome = document.getElementById('reg-nome').value.trim();
+      const email = document.getElementById('reg-email').value.trim().toLowerCase();
+      const cpf = document.getElementById('reg-cpf').value.trim();
+      const cargo = document.getElementById('reg-cargo').value;
+      const senha = document.getElementById('reg-password').value;
+      const confirmarSenha = document.getElementById('reg-confirm').value;
+
+      if (senha !== confirmarSenha) {
+        exibirAlertaAutenticacao('As senhas digitadas não coincidem!');
+        return;
+      }
+
+      if (usuariosCadastrados.some(u => u.email.toLowerCase() === email)) {
+        exibirAlertaAutenticacao('Este e-mail já está cadastrado no sistema!');
+        return;
+      }
+
+      const novoUsuario = { nome, email, cpf, cargo, senha };
+      usuariosCadastrados.push(novoUsuario);
+      salvarUsuarios();
+
+      usuarioAtual = { nome, email, cargo };
+      localStorage.setItem('esf_current_user', JSON.stringify(usuarioAtual));
+      exibirPainelPrincipal();
+    }
+
+    function executarLogout() {
+      usuarioAtual = null;
+      localStorage.removeItem('esf_current_user');
+      exibirTelaLogin();
+    }
+
+    function abrirModalEsqueceuSenha() { document.getElementById('forgot-modal').classList.remove('hidden'); }
+    function fecharModalEsqueceuSenha() { document.getElementById('forgot-modal').classList.add('hidden'); }
+    function tratarEnvioEsqueceuSenha(e) {
+      e.preventDefault();
+      fecharModalEsqueceuSenha();
+      alert('Instruções de recuperação enviadas para o e-mail informado.');
+    }
+
+    // --- NAVEGAÇÃO DE ABAS DO PAINEL PRINCIPAL --- //
+    function alternarAba(idAba) {
+      abaAtiva = idAba;
+      
+      // Estilização dos botões do menu lateral
+      ['dashboard', 'veiculos', 'funcionarios', 'manutencoes', 'obrigacoes', 'relatorios'].forEach(id => {
+        const btn = document.getElementById(`nav-${id}`);
+        if (btn) {
+          if (id === idAba) {
+            btn.className = 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition bg-brand-yellow text-black shadow';
+          } else {
+            btn.className = 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition';
+          }
+        }
+      });
+
+      const titulos = {
+        dashboard: 'Painel Geral • Indicadores e Alertas da Frota',
+        veiculos: 'Gestão de Veículos • Cadastro e Frota (RF02)',
+        funcionarios: 'Gestão de Colaboradores & Vinculações (RF01/RF03)',
+        manutencoes: 'Controle de Manutenção Preventiva e Corretiva (RF06)',
+        obrigacoes: 'Serviços Legais, IPVA, Licenciamento & Multas (RF05)',
+        relatorios: 'Relatórios Operacionais & Indicadores de Desempenho'
+      };
+      document.getElementById('header-page-title').innerText = titulos[idAba] || 'ESF - Easy System Fleet';
+
+      const areaConteudo = document.getElementById('tab-content-area');
+      if (idAba === 'dashboard') areaConteudo.innerHTML = renderizarAbaDashboard();
+      else if (idAba === 'veiculos') areaConteudo.innerHTML = renderizarAbaVeiculos();
+      else if (idAba === 'funcionarios') areaConteudo.innerHTML = renderizarAbaFuncionarios();
+      else if (idAba === 'manutencoes') areaConteudo.innerHTML = renderizarAbaManutencoes();
+      else if (idAba === 'obrigacoes') areaConteudo.innerHTML = renderizarAbaObrigacoes();
+      else if (idAba === 'relatorios') areaConteudo.innerHTML = renderizarAbaRelatorios();
+
+      if (idAba === 'dashboard') inicializarGraficoDashboard();
+      if (idAba === 'relatorios') inicializarGraficoRelatorios();
+    }
+
+    // --- RENDEREZAÇÃO: DASHBOARD --- //
+    function renderizarAbaDashboard() {
+      const emUso = db.veiculos.filter(v => v.situacao === 'Em uso').length;
+      const disponiveis = db.veiculos.filter(v => v.situacao === 'Disponível').length;
+      const totalVeiculos = db.veiculos.length;
+      const manutencoesPendentes = db.manutencoes.filter(m => m.situacao !== 'Concluída').length;
+      const obrigacoesPendentes = db.obrigacoes.filter(o => o.situacao !== 'Pago').length;
+
+      return `
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-brand-yellow text-xl font-bold">
+              <i class="fa-solid fa-taxi"></i>
+            </div>
+            <div>
+              <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Frota Total</p>
+              <h3 class="text-2xl font-black text-white">${totalVeiculos} <span class="text-xs font-normal text-zinc-400">veículos</span></h3>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl font-bold">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Em Operação</p>
+              <h3 class="text-2xl font-black text-emerald-400">${emUso} <span class="text-xs font-normal text-zinc-400">ativos</span></h3>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl font-bold">
+              <i class="fa-solid fa-wrench"></i>
+            </div>
+            <div>
+              <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Manutenções</p>
+              <h3 class="text-2xl font-black text-blue-400">${manutencoesPendentes} <span class="text-xs font-normal text-zinc-400">pendentes</span></h3>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-xl font-bold">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div>
+              <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Impostos & Multas</p>
+              <h3 class="text-2xl font-black text-red-400">${obrigacoesPendentes} <span class="text-xs font-normal text-zinc-400">pendentes</span></h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-brand-card border border-brand-border rounded-2xl p-5">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-chart-bar text-brand-yellow"></i> Situação Operacional da Frota Kemotu Táxi
+            </h4>
+            <div class="h-64">
+              <canvas id="dashboardChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-5 flex flex-col">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-bell text-brand-yellow"></i> Alertas e Pendências Urgentes
+            </h4>
+            <div class="space-y-3 flex-1 overflow-y-auto">
+              ${db.obrigacoes.filter(o => o.situacao !== 'Pago').map(o => {
+                const veiculo = db.veiculos.find(v => v.id === o.id_veiculo);
+                return `
+                  <div class="p-3 rounded-xl bg-zinc-950/70 border border-red-500/30 flex items-center justify-between">
+                    <div>
+                      <p class="text-xs font-bold text-white">${o.tipo}</p>
+                      <p class="text-[10px] text-zinc-400">Veículo: ${veiculo ? veiculo.placa : 'N/A'} • Venc: ${o.data_vencimento}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold rounded-lg">R$ ${o.valor.toFixed(2)}</span>
+                  </div>
+                `;
+              }).join('')}
+
+              ${db.manutencoes.filter(m => m.situacao === 'Em andamento').map(m => {
+                const veiculo = db.veiculos.find(v => v.id === m.id_veiculo);
+                return `
+                  <div class="p-3 rounded-xl bg-zinc-950/70 border border-amber-500/30 flex items-center justify-between">
+                    <div>
+                      <p class="text-xs font-bold text-amber-400">Manutenção: ${m.tipo}</p>
+                      <p class="text-[10px] text-zinc-400">Veículo: ${veiculo ? veiculo.placa : 'N/A'} • Prev: ${m.data_prevista}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-lg">Em Oficina</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function inicializarGraficoDashboard() {
+      const ctx = document.getElementById('dashboardChart');
+      if (!ctx) return;
+      if (graficoAtivo) graficoAtivo.destroy();
+
+      const disponivel = db.veiculos.filter(v => v.situacao === 'Disponível').length;
+      const emUso = db.veiculos.filter(v => v.situacao === 'Em uso').length;
+      const manutencao = db.veiculos.filter(v => v.situacao === 'Em manutenção').length;
+      const inativo = db.veiculos.filter(v => v.situacao === 'Inativo').length;
+
+      graficoAtivo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Disponível', 'Em uso', 'Em manutenção', 'Inativo'],
+          datasets: [{
+            label: 'Veículos',
+            data: [disponivel, emUso, manutencao, inativo],
+            backgroundColor: ['#10B981', '#F59E0B', '#3B82F6', '#6B7280'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { color: '#A1A1AA', stepSize: 1 }, grid: { color: '#272732' } },
+            x: { ticks: { color: '#A1A1AA' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // --- RENDERIZAÇÃO: VEÍCULOS --- //
+    function renderizarAbaVeiculos() {
+      return `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-card p-4 rounded-2xl border border-brand-border">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Frota de Veículos Cadastrados</h3>
+            <p class="text-xs text-zinc-400">Consulte, edite e cadastre novos carros da frota (RF02)</p>
+          </div>
+          <button onclick="abrirModalVeiculo()" class="px-4 py-2 bg-brand-yellow hover:bg-brand-hoverYellow text-black text-xs font-bold rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Novo Veículo
+          </button>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-950 text-zinc-400 uppercase tracking-wider text-[10px] border-b border-brand-border">
+                <tr>
+                  <th class="p-4">Placa</th>
+                  <th class="p-4">Marca / Modelo</th>
+                  <th class="p-4">Ano</th>
+                  <th class="p-4">Portas</th>
+                  <th class="p-4">Quilometragem</th>
+                  <th class="p-4">Situação</th>
+                  <th class="p-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800/60 font-medium">
+                ${db.veiculos.map(v => {
+                  let badge = 'bg-zinc-800 text-zinc-300';
+                  if (v.situacao === 'Disponível') badge = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                  if (v.situacao === 'Em uso') badge = 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                  if (v.situacao === 'Em manutenção') badge = 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+
+                  return `
+                    <tr class="hover:bg-zinc-900/50">
+                      <td class="p-4 font-mono font-bold text-brand-yellow">${v.placa}</td>
+                      <td class="p-4 font-bold text-white">${v.marca} ${v.modelo}</td>
+                      <td class="p-4 text-zinc-400">${v.ano}</td>
+                      <td class="p-4 text-zinc-400">${v.portas} p.</td>
+                      <td class="p-4 font-mono text-zinc-300">${v.km.toLocaleString('pt-BR')} KM</td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${v.situacao}</span></td>
+                      <td class="p-4 text-right space-x-2">
+                        <button onclick="editarVeiculo(${v.id})" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="excluirVeiculo(${v.id})" class="p-1.5 bg-red-950 hover:bg-red-900 text-red-400 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function abrirModalVeiculo(veiculo = null) {
+      const eEdicao = !!veiculo;
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-taxi text-brand-yellow"></i> ${eEdicao ? 'Editar Veículo' : 'Cadastrar Veículo'}
+            </h4>
+            <button onclick="fecharModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form onsubmit="salvarVeiculo(event, ${eEdicao ? veiculo.id : 'null'})" class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Placa</label>
+                <input type="text" id="v-placa" value="${eEdicao ? veiculo.placa : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white uppercase font-mono">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Marca</label>
+                <input type="text" id="v-marca" value="${eEdicao ? veiculo.marca : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Modelo</label>
+                <input type="text" id="v-modelo" value="${eEdicao ? veiculo.modelo : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Ano</label>
+                <input type="number" id="v-ano" value="${eEdicao ? veiculo.ano : 2024}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Portas</label>
+                <select id="v-portas" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                  <option value="4" ${eEdicao && veiculo.portas === 4 ? 'selected' : ''}>4 portas</option>
+                  <option value="2" ${eEdicao && veiculo.portas === 2 ? 'selected' : ''}>2 portas</option>
+                  <option value="5" ${eEdicao && veiculo.portas === 5 ? 'selected' : ''}>5 portas</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">KM Atual</label>
+                <input type="number" id="v-km" value="${eEdicao ? veiculo.km : 0}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Situação</label>
+              <select id="v-situacao" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                <option value="Disponível" ${eEdicao && veiculo.situacao === 'Disponível' ? 'selected' : ''}>Disponível</option>
+                <option value="Em uso" ${eEdicao && veiculo.situacao === 'Em uso' ? 'selected' : ''}>Em uso</option>
+                <option value="Em manutenção" ${eEdicao && veiculo.situacao === 'Em manutenção' ? 'selected' : ''}>Em manutenção</option>
+                <option value="Inativo" ${eEdicao && veiculo.situacao === 'Inativo' ? 'selected' : ''}>Inativo</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-zinc-800 text-xs text-zinc-300 font-semibold rounded-xl">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-brand-yellow text-black text-xs font-bold rounded-xl shadow">Salvar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function salvarVeiculo(e, id) {
+      e.preventDefault();
+      const placa = document.getElementById('v-placa').value.toUpperCase();
+      const marca = document.getElementById('v-marca').value;
+      const modelo = document.getElementById('v-modelo').value;
+      const ano = parseInt(document.getElementById('v-ano').value);
+      const portas = parseInt(document.getElementById('v-portas').value);
+      const km = parseFloat(document.getElementById('v-km').value);
+      const situacao = document.getElementById('v-situacao').value;
+
+      if (id) {
+        const v = db.veiculos.find(x => x.id === id);
+        if (v) Object.assign(v, { placa, marca, modelo, ano, portas, km, situacao });
+      } else {
+        const novoId = db.veiculos.length ? Math.max(...db.veiculos.map(v => v.id)) + 1 : 1;
+        db.veiculos.push({ id: novoId, placa, marca, modelo, ano, portas, km, situacao });
+      }
+
+      salvarDB();
+      fecharModal();
+      alternarAba('veiculos');
+    }
+
+    function editarVeiculo(id) {
+      const v = db.veiculos.find(x => x.id === id);
+      if (v) abrirModalVeiculo(v);
+    }
+    function excluirVeiculo(id) {
+      if (confirm('Deseja realmente remover este veículo da frota?')) {
+        db.veiculos = db.veiculos.filter(x => x.id !== id);
+        salvarDB();
+        alternarAba('veiculos');
+      }
+    }
+
+    // --- RENDERIZAÇÃO: FUNCIONÁRIOS --- //
+    function renderizarAbaFuncionarios() {
+      return `
+        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Equipe & Vinculação aos Veículos</h3>
+            <p class="text-xs text-zinc-400">Controle de colaboradores e alocação de frota (RF01/RF03)</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-users text-brand-yellow"></i> Lista de Colaboradores
+            </h4>
+            <div class="space-y-3">
+              ${db.funcionarios.map(f => `
+                <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold text-white">${f.nome}</p>
+                    <p class="text-[10px] text-zinc-400">${f.cargo} • ${f.telefone}</p>
+                  </div>
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400">${f.situacao}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-key text-brand-yellow"></i> Histórico de Vinculações
+            </h4>
+            <div class="space-y-3">
+              ${db.alocacoes.map(a => {
+                const func = db.funcionarios.find(f => f.id === a.id_funcionario);
+                const veic = db.veiculos.find(v => v.id === a.id_veiculo);
+                return `
+                  <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <p class="text-xs font-bold text-white">${func ? func.nome : 'N/A'}</p>
+                      <p class="text-[10px] text-brand-yellow font-mono">Veículo: ${veic ? veic.placa + ' (' + veic.modelo + ')' : 'N/A'}</p>
+                    </div>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${a.situacao === 'Ativa' ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-400'}">${a.situacao}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- RENDERIZAÇÃO: MANUTENÇÕES --- //
+    function renderizarAbaManutencoes() {
+      return `
+        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Histórico de Manutenções</h3>
+            <p class="text-xs text-zinc-400">Serviços preventivos e corretivos da Kemotu Táxi (RF06)</p>
+          </div>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-950 text-zinc-400 uppercase tracking-wider text-[10px] border-b border-brand-border">
+                <tr>
+                  <th class="p-4">Veículo</th>
+                  <th class="p-4">Tipo</th>
+                  <th class="p-4">Descrição</th>
+                  <th class="p-4">Data Prevista</th>
+                  <th class="p-4">Custo (R$)</th>
+                  <th class="p-4">Situação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800/60 font-medium">
+                ${db.manutencoes.map(m => {
+                  const veic = db.veiculos.find(v => v.id === m.id_veiculo);
+                  return `
+                    <tr class="hover:bg-zinc-900/50">
+                      <td class="p-4 font-mono font-bold text-brand-yellow">${veic ? veic.placa : 'N/A'}</td>
+                      <td class="p-4 font-bold text-white">${m.tipo}</td>
+                      <td class="p-4 text-zinc-300 max-w-xs truncate">${m.descricao}</td>
+                      <td class="p-4 text-zinc-400">${m.data_prevista || 'N/A'}</td>
+                      <td class="p-4 font-mono text-emerald-400">R$ ${m.valor.toFixed(2)}</td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-amber-400">${m.situacao}</span></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- RENDERIZAÇÃO: OBRIGAÇÕES LEGAIS --- //
+    function renderizarAbaObrigacoes() {
+      return `
+        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Serviços Legais, IPVA & Multas</h3>
+            <p class="text-xs text-zinc-400">Controle de impostos e obrigações da frota (RF05)</p>
+          </div>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-950 text-zinc-400 uppercase tracking-wider text-[10px] border-b border-brand-border">
+                <tr>
+                  <th class="p-4">Veículo</th>
+                  <th class="p-4">Obrigação / Imposto</th>
+                  <th class="p-4">Exercício</th>
+                  <th class="p-4">Vencimento</th>
+                  <th class="p-4">Valor</th>
+                  <th class="p-4">Situação</th>
+                  <th class="p-4 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800/60 font-medium">
+                ${db.obrigacoes.map(o => {
+                  const veic = db.veiculos.find(v => v.id === o.id_veiculo);
+                  let badge = 'bg-amber-500/20 text-amber-400';
+                  if (o.situacao === 'Pago') badge = 'bg-emerald-500/20 text-emerald-400';
+                  if (o.situacao === 'Vencido') badge = 'bg-red-500/20 text-red-400';
+
+                  return `
+                    <tr class="hover:bg-zinc-900/50">
+                      <td class="p-4 font-mono font-bold text-brand-yellow">${veic ? veic.placa : 'N/A'}</td>
+                      <td class="p-4 font-bold text-white">${o.tipo}</td>
+                      <td class="p-4 text-zinc-400">${o.exercicio}</td>
+                      <td class="p-4 text-zinc-400">${o.data_vencimento}</td>
+                      <td class="p-4 font-mono text-white">R$ ${o.valor.toFixed(2)}</td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${o.situacao}</span></td>
+                      <td class="p-4 text-right">
+                        ${o.situacao !== 'Pago' ? `
+                          <button onclick="quitarObrigacao(${o.id})" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">Pagar</button>
+                        ` : '<span class="text-zinc-500 text-[10px]">Quitado</span>'}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function quitarObrigacao(id) {
+      const o = db.obrigacoes.find(x => x.id === id);
+      if (o) {
+        o.situacao = 'Pago';
+        o.data_pagamento = new Date().toISOString().split('T')[0];
+        salvarDB();
+        alternarAba('obrigacoes');
+      }
+    }
+
+    // --- RENDERIZAÇÃO: RELATÓRIOS E KPIS --- //
+    function renderizarAbaRelatorios() {
+      return `
+        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Indicadores de Gestão (KPIs)</h3>
+          <p class="text-xs text-zinc-400">Métricas financeiras e operacionais da frota Kemotu Táxi</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-5">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-4">Distribuição Financeira de Custos</h4>
+            <div class="h-64">
+              <canvas id="relatoriosChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-5 space-y-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Resumo Executivo</h4>
+            <div class="p-3 bg-zinc-950 rounded-xl border border-zinc-800">
+              <p class="text-[10px] font-bold text-zinc-400 uppercase">Custo Total de Manutenções</p>
+              <p class="text-lg font-black text-brand-yellow">R$ ${db.manutencoes.reduce((acc, m) => acc + m.valor, 0).toFixed(2)}</p>
+            </div>
+            <div class="p-3 bg-zinc-950 rounded-xl border border-zinc-800">
+              <p class="text-[10px] font-bold text-zinc-400 uppercase">Custo Total de Impostos & Licenciamentos</p>
+              <p class="text-lg font-black text-emerald-400">R$ ${db.obrigacoes.reduce((acc, o) => acc + o.valor, 0).toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function inicializarGraficoRelatorios() {
+      const ctx = document.getElementById('relatoriosChart');
+      if (!ctx) return;
+      if (graficoAtivo) graficoAtivo.destroy();
+
+      const totalManut = db.manutencoes.reduce((acc, m) => acc + m.valor, 0);
+      const totalObrig = db.obrigacoes.reduce((acc, o) => acc + o.valor, 0);
+
+      graficoAtivo = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Manutenções', 'Impostos & Taxas'],
+          datasets: [{
+            data: [totalManut, totalObrig],
+            backgroundColor: ['#F59E0B', '#10B981']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#A1A1AA' } } }
+        }
+      });
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-container').classList.add('hidden');
+    }
+    function alternarSidebarMobile() {
+      document.getElementById('main-sidebar').classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>
