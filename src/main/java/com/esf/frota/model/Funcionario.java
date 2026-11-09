@@ -1,5 +1,7 @@
 package com.esf.frota.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -27,6 +29,7 @@ public class Funcionario {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String senha; // Necessário para a autenticação JWT
 
