@@ -1,11 +1,13 @@
 package com.esf.frota.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "funcionario")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Funcionario {
 
     @Id
@@ -28,7 +30,7 @@ public class Funcionario {
     private String email;
 
     @Column(nullable = false)
-    private String senha; // Necessário para a autenticação JWT
+    private String senha;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

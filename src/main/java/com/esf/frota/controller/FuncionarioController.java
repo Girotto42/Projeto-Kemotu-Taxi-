@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/funcionarios")
@@ -17,6 +18,21 @@ public class FuncionarioController {
 
     @Autowired
     private FuncionarioService funcionarioService;
+
+    @PostMapping("/auth/login")
+    public ResponseEntity<?> fazerLogin(@RequestBody Funcionario credenciais) {
+        // Busca o funcionário pelo e-mail enviado no login
+        Optional<Funcionario> funcionarioOpt = funcionarioService.buscarPorEmail(credenciais.getEmail());
+
+        if (funcionarioOpt.isPresent()) {
+            Funcionario func = funcionarioOpt.get();
+            // Valida se a senha confere
+            if (func.getSenha().equals(credenciais.getSenha())) {
+                return ResponseEntity.ok(func);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("E-mail ou senha incorretos.");
+    }
 
     @GetMapping
     public List<Funcionario> listar() {
@@ -48,7 +64,7 @@ public class FuncionarioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+    public ResponseEntity<Void> deLeader(@PathVariable Long id) {
         if (funcionarioService.buscarPorId(id).isPresent()) {
             funcionarioService.deletar(id);
             return ResponseEntity.noContent().build();
