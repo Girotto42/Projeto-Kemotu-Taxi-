@@ -2,6 +2,7 @@ package com.esf.frota.service;
 
 import com.esf.frota.model.Manutencao;
 import com.esf.frota.repository.ManutencaoRepository;
+import com.esf.frota.repository.VeiculoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ public class ManutencaoService {
 
     @Autowired
     private ManutencaoRepository manutencaoRepository;
+    @Autowired private VeiculoRepository veiculoRepository;
 
     public List<Manutencao> listarTodas() {
         return manutencaoRepository.findAll();
@@ -23,6 +25,8 @@ public class ManutencaoService {
     }
 
     public Manutencao salvar(Manutencao manutencao) {
+        if (manutencao.getVeiculo() != null && manutencao.getVeiculo().getIdVeiculo() != null)
+            manutencao.setVeiculo(veiculoRepository.getReferenceById(manutencao.getVeiculo().getIdVeiculo()));
         return manutencaoRepository.save(manutencao);
     }
 

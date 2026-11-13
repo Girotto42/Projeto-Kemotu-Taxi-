@@ -2,10 +2,12 @@ package com.esf.frota.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -44,5 +46,21 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(resposta);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErroResposta> handleStatusException(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        ErroResposta resposta = new ErroResposta(LocalDateTime.now(), status.value(),
+                ex.getReason() == null ? status.getReasonPhrase() : ex.getReason());
+        return ResponseEntity.status(status).body(resposta);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErroResposta> handleAuthenticationException(AuthenticationException ex) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ErroResposta resposta = new ErroResposta(LocalDateTime.now(), status.value(),
+                "E-mail ou senha inválidos.");
+        return ResponseEntity.status(status).body(resposta);
     }
 }

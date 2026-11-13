@@ -177,11 +177,11 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Senha</label>
-            <input type="password" id="reg-password" required minlength="3" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="••••••••">
+            <input type="password" id="reg-password" required minlength="8" maxlength="72" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="••••••••">
           </div>
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Confirmar Senha</label>
-            <input type="password" id="reg-confirm" required minlength="3" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="••••••••">
+            <input type="password" id="reg-confirm" required minlength="8" maxlength="72" class="w-full px-3 py-2.5 glass-input rounded-xl text-xs text-white" placeholder="••••••••">
           </div>
         </div>
 
@@ -318,51 +318,50 @@
   <!-- ========================================== -->
   <script>
     // URL Base do Back-end Spring Boot
-    const API_URL = "http://localhost:8080";
+    const API_URL = window.location.origin;
+    let apiAuthorization = null;
 
-    // Estrutura do Banco de Dados Local (Fallback / Cache)
-    const bancoDadosInicial = {
-      veiculos: [
-        { id: 1, placa: 'ABC1D23', marca: 'Chevrolet', modelo: 'Onix Sedan', ano: 2023, portas: 4, km: 45200, situacao: 'Em uso' },
-        { id: 2, placa: 'KMT4E56', marca: 'Toyota', modelo: 'Corolla Hybrid', ano: 2024, portas: 4, km: 18500, situacao: 'Disponível' },
-        { id: 3, placa: 'RIO9F88', marca: 'Hyundai', modelo: 'HB20S', ano: 2022, portas: 4, km: 78900, situacao: 'Em manutenção' },
-        { id: 4, placa: 'FTE3A11', marca: 'Volkswagen', modelo: 'Virtus', ano: 2023, portas: 4, km: 32100, situacao: 'Em uso' },
-        { id: 5, placa: 'KMT9Z99', marca: 'Nissan', modelo: 'V-Drive', ano: 2021, portas: 4, km: 112000, situacao: 'Inativo' }
-      ],
-      funcionarios: [
-        { id: 1, nome: 'Carlos Eduardo Silva', cpf: '123.456.789-00', cargo: 'Motorista Titular', telefone: '(18) 99712-3456', email: 'carlos@kemotutaxi.com.br', situacao: 'Ativo' },
-        { id: 2, nome: 'Ana Paula Ferreira', cpf: '234.567.890-11', cargo: 'Motorista Noturno', telefone: '(18) 99654-9876', email: 'ana.paula@kemotutaxi.com.br', situacao: 'Ativo' },
-        { id: 3, nome: 'Roberto Mendes', cpf: '345.678.901-22', cargo: 'Gestor de Frota', telefone: '(18) 99823-1122', email: 'roberto.mendes@kemotutaxi.com.br', situacao: 'Ativo' }
-      ],
-      alocacoes: [
-        { id: 1, id_funcionario: 1, id_veiculo: 1, data_inicio: '2024-01-15', data_fim: null, situacao: 'Ativa' },
-        { id: 2, id_funcionario: 2, id_veiculo: 4, data_inicio: '2024-02-01', data_fim: null, situacao: 'Ativa' }
-      ],
-      manutencoes: [
-        { id: 1, id_veiculo: 3, tipo: 'Corretiva', descricao: 'Troca da caixa de câmbio e pastilhas de freio', data_manutencao: '2026-11-01', data_prevista: '2026-11-08', km: 78900, valor: 3450.00, situacao: 'Em andamento' },
-        { id: 2, id_veiculo: 1, tipo: 'Preventiva', descricao: 'Troca de óleo, filtro de ar e alinhamento', data_manutencao: '2026-10-10', data_prevista: '2026-10-10', km: 40000, valor: 650.00, situacao: 'Concluída' },
-        { id: 3, id_veiculo: 2, tipo: 'Preventiva', descricao: 'Revisão geral de 20.000 KM', data_manutencao: null, data_prevista: '2026-11-20', km: 20000, valor: 890.00, situacao: 'Programada' }
-      ],
-      obrigacoes: [
-        { id: 1, id_veiculo: 1, tipo: 'IPVA 2026', exercicio: 2026, valor: 1850.00, data_vencimento: '2026-03-15', data_pagamento: '2026-03-10', situacao: 'Pago' },
-        { id: 2, id_veiculo: 3, tipo: 'Licenciamento Anual', exercicio: 2026, valor: 160.00, data_vencimento: '2026-11-12', data_pagamento: null, situacao: 'Pendente' },
-        { id: 3, id_veiculo: 4, tipo: 'Multa Excesso de Velocidade', exercicio: 2026, valor: 195.23, data_vencimento: '2026-10-25', data_pagamento: null, situacao: 'Vencido' },
-        { id: 4, id_veiculo: 2, tipo: 'Vistoria Semestral TÁXI', exercicio: 2026, valor: 280.00, data_vencimento: '2026-11-30', data_pagamento: null, situacao: 'Pendente' }
-      ]
-    };
+    function escaparHtml(valor) {
+      return String(valor ?? '').replace(/[&<>"']/g, caractere => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[caractere]);
+    }
 
-    let db = JSON.parse(localStorage.getItem('esf_db_store')) || bancoDadosInicial;
-    let usuariosCadastrados = JSON.parse(localStorage.getItem('esf_users_store')) || [];
-    let usuarioAtual = JSON.parse(localStorage.getItem('esf_current_user')) || null;
+    function base64Utf8(valor) {
+      const bytes = new TextEncoder().encode(valor);
+      let binario = '';
+      bytes.forEach(byte => binario += String.fromCharCode(byte));
+      return btoa(binario);
+    }
+
+    async function apiFetch(path, options = {}) {
+      const headers = new Headers(options.headers || {});
+      if (apiAuthorization) headers.set('Authorization', apiAuthorization);
+      if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+      const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.message || payload.detalhes || `Falha HTTP ${response.status}`);
+      }
+      return response;
+    }
+
+    const statusVeiculoUI = { Disponivel: 'Disponível', Em_uso: 'Em uso', Em_manutencao: 'Em manutenção', Inativo: 'Inativo' };
+    const statusManutencaoUI = { Programada: 'Programada', Em_andamento: 'Em andamento', Concluida: 'Concluída', Cancelada: 'Cancelada' };
+    const statusObrigacaoUI = { Pendente: 'Pendente', Pago: 'Pago', Vencido: 'Vencido' };
+    const formatarRecurso = (itens, tipo) => itens.map(item => {
+      if (tipo === 'veiculos') return { ...item, id: item.idVeiculo, ano: item.anoFabricacao, portas: item.quantidadePortas, km: Number(item.quilometragem), situacao: statusVeiculoUI[item.situacao] || item.situacao };
+      if (tipo === 'funcionarios') return { ...item, id: item.idFuncionario };
+      if (tipo === 'alocacoes') return { ...item, id: item.idAlocacao, id_funcionario: item.funcionario?.idFuncionario, id_veiculo: item.veiculo?.idVeiculo };
+      if (tipo === 'manutencoes') return { ...item, id: item.idManutencao, id_veiculo: item.veiculo?.idVeiculo, tipo: item.tipoManutencao, data_prevista: item.dataPrevista, situacao: statusManutencaoUI[item.situacao] || item.situacao };
+      if (tipo === 'obrigacoes') return { ...item, id: item.idObrigacao, id_veiculo: item.veiculo?.idVeiculo, tipo: item.tipoObrigacao, data_vencimento: item.dataVencimento, data_pagamento: item.dataPagamento, situacao: statusObrigacaoUI[item.situacao] || item.situacao };
+      return item;
+    });
+
+    let db = { veiculos: [], funcionarios: [], alocacoes: [], manutencoes: [], obrigacoes: [] };
+    let usuarioAtual = null;
     let abaAtiva = 'dashboard';
     let graficoAtivo = null;
-
-    function salvarDB() {
-      localStorage.setItem('esf_db_store', JSON.stringify(db));
-    }
-    function salvarUsuarios() {
-      localStorage.setItem('esf_users_store', JSON.stringify(usuariosCadastrados));
-    }
 
     // --- GERADOR DA LOGO OFICIAL ESF EM SVG --- //
     function obterLogoESFSVG(tamanho = 'normal') {
@@ -422,11 +421,7 @@
       document.getElementById('auth-logo-wrapper').innerHTML = obterLogoESFSVG('large');
       document.getElementById('sidebar-logo-wrapper').innerHTML = obterLogoESFSVG('normal');
 
-      if (usuarioAtual) {
-        exibirPainelPrincipal();
-      } else {
-        exibirTelaLogin();
-      }
+      exibirTelaLogin();
     };
 
     function exibirTelaLogin() {
@@ -489,91 +484,61 @@
     async function executarLogin(e) {
       e.preventDefault();
       ocultarAlertaAutenticacao();
-
-      const email = document.getElementById('login-email').value.trim();
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
       const senha = document.getElementById('login-password').value;
-
       try {
         const resposta = await fetch(`${API_URL}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, senha })
         });
-
-        if (resposta.ok) {
-          const dados = await resposta.json();
-          usuarioAtual = { nome: dados.nome || email, email: email, cargo: dados.cargo || 'Gestor de Frota' };
-          localStorage.setItem('esf_current_user', JSON.stringify(usuarioAtual));
-          exibirPainelPrincipal();
-        } else {
-          // Fallback para login local em caso de desenvolvimento/offline
-          const usuarioEncontrado = usuariosCadastrados.find(u => u.email.toLowerCase() === email.toLowerCase() && u.senha === senha);
-          if (usuarioEncontrado) {
-            usuarioAtual = { nome: usuarioEncontrado.nome, email: usuarioEncontrado.email, cargo: usuarioEncontrado.cargo };
-            localStorage.setItem('esf_current_user', JSON.stringify(usuarioAtual));
-            exibirPainelPrincipal();
-          } else {
-            exibirAlertaAutenticacao('E-mail ou senha incorretos.');
-          }
-        }
+        if (!resposta.ok) throw new Error('E-mail ou senha incorretos.');
+        usuarioAtual = await resposta.json();
+        apiAuthorization = `Basic ${base64Utf8(`${email}:${senha}`)}`;
+        await carregarDadosApi();
+        exibirPainelPrincipal();
       } catch (erro) {
-        console.error("Erro de conexão com o back-end:", erro);
-        // Tenta autenticar localmente se o back-end estiver fora do ar
-        const usuarioEncontrado = usuariosCadastrados.find(u => u.email.toLowerCase() === email.toLowerCase() && u.senha === senha);
-        if (usuarioEncontrado) {
-          usuarioAtual = { nome: usuarioEncontrado.nome, email: usuarioEncontrado.email, cargo: usuarioEncontrado.cargo };
-          localStorage.setItem('esf_current_user', JSON.stringify(usuarioAtual));
-          exibirPainelPrincipal();
-        } else {
-          exibirAlertaAutenticacao('Não foi possível conectar ao servidor Spring Boot. Verifique se o servidor está ativo.');
-        }
+        apiAuthorization = null;
+        exibirAlertaAutenticacao(erro.message || 'Não foi possível conectar ao servidor.');
       }
     }
 
     async function executarCadastro(e) {
       e.preventDefault();
       ocultarAlertaAutenticacao();
-
       const nome = document.getElementById('reg-nome').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
+      const email = document.getElementById('reg-email').value.trim().toLowerCase();
       const cpf = document.getElementById('reg-cpf').value.trim();
       const cargo = document.getElementById('reg-cargo').value;
       const senha = document.getElementById('reg-password').value;
       const confirmarSenha = document.getElementById('reg-confirm').value;
-
-      if (senha !== confirmarSenha) {
-        exibirAlertaAutenticacao('As senhas digitadas não coincidem!');
-        return;
-      }
-
-      const novoFuncionario = { nome, email, cpf, cargo, senha, situacao: 'Ativo' };
-
+      if (senha !== confirmarSenha) return exibirAlertaAutenticacao('As senhas digitadas não coincidem.');
       try {
-        const resposta = await fetch(`${API_URL}/api/funcionarios`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(novoFuncionario)
+        const resposta = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, cpf, cargo, senha })
         });
-
-        if (resposta.ok) {
-          alert('Cadastro realizado com sucesso! Faça login para continuar.');
-          alternarAbaAutenticacao('login');
-        } else {
-          exibirAlertaAutenticacao('Erro ao cadastrar funcionário no banco de dados. Verifique os dados fornecidos.');
+        if (!resposta.ok) {
+          const erro = await resposta.json().catch(() => ({}));
+          throw new Error(erro.message || 'Não foi possível cadastrar. Verifique os dados informados.');
         }
-      } catch (erro) {
-        console.error("Erro:", erro);
-        // Fallback local
-        usuariosCadastrados.push({ nome, email, cpf, cargo, senha });
-        salvarUsuarios();
-        alert('Servidor offline: Usuário cadastrado localmente!');
+        alert('Cadastro realizado com sucesso. Faça login para continuar.');
         alternarAbaAutenticacao('login');
+      } catch (erro) {
+        exibirAlertaAutenticacao(erro.message || 'Não foi possível conectar ao servidor.');
+      }
+    }
+
+    async function carregarDadosApi() {
+      const recursos = ['veiculos', 'funcionarios', 'alocacoes', 'manutencoes', 'obrigacoes'];
+      for (const recurso of recursos) {
+        const resposta = await apiFetch(`/api/${recurso}`);
+        db[recurso] = formatarRecurso(await resposta.json(), recurso);
       }
     }
 
     function executarLogout() {
       usuarioAtual = null;
-      localStorage.removeItem('esf_current_user');
+      apiAuthorization = null;
       exibirTelaLogin();
     }
 
@@ -582,7 +547,7 @@
     function tratarEnvioEsqueceuSenha(e) {
       e.preventDefault();
       fecharModalEsqueceuSenha();
-      alert('Instruções de recuperação enviadas para o e-mail informado.');
+      exibirAlertaAutenticacao('Recuperação de senha ainda não configurada. Contate a equipe responsável.');
     }
 
     // --- NAVEGAÇÃO DE ABAS DO PAINEL PRINCIPAL (COM AWAIT PARA FETCH) --- //
@@ -693,8 +658,8 @@
                 return `
                   <div class="p-3 rounded-xl bg-zinc-950/70 border border-red-500/30 flex items-center justify-between">
                     <div>
-                      <p class="text-xs font-bold text-white">${o.tipo}</p>
-                      <p class="text-[10px] text-zinc-400">Veículo: ${veiculo ? veiculo.placa : 'N/A'} • Venc: ${o.data_vencimento || o.dataVencimento}</p>
+                      <p class="text-xs font-bold text-white">${escaparHtml(o.tipo)}</p>
+                      <p class="text-[10px] text-zinc-400">Veículo: ${escaparHtml(veiculo ? veiculo.placa : 'N/A')} • Venc: ${escaparHtml(o.data_vencimento || o.dataVencimento)}</p>
                     </div>
                     <span class="px-2 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold rounded-lg">R$ ${Number(o.valor).toFixed(2)}</span>
                   </div>
@@ -706,8 +671,8 @@
                 return `
                   <div class="p-3 rounded-xl bg-zinc-950/70 border border-amber-500/30 flex items-center justify-between">
                     <div>
-                      <p class="text-xs font-bold text-amber-400">Manutenção: ${m.tipo}</p>
-                      <p class="text-[10px] text-zinc-400">Veículo: ${veiculo ? veiculo.placa : 'N/A'} • Prev: ${m.data_prevista || m.dataPrevista}</p>
+                      <p class="text-xs font-bold text-amber-400">Manutenção: ${escaparHtml(m.tipo)}</p>
+                      <p class="text-[10px] text-zinc-400">Veículo: ${escaparHtml(veiculo ? veiculo.placa : 'N/A')} • Prev: ${escaparHtml(m.data_prevista || m.dataPrevista)}</p>
                     </div>
                     <span class="px-2 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-lg">Em Oficina</span>
                   </div>
@@ -721,7 +686,7 @@
 
     function inicializarGraficoDashboard() {
       const ctx = document.getElementById('dashboardChart');
-      if (!ctx) return;
+      if (!ctx || typeof Chart === 'undefined') return;
       if (graficoAtivo) graficoAtivo.destroy();
 
       const disponivel = db.veiculos.filter(v => v.situacao === 'Disponível').length;
@@ -755,12 +720,13 @@
     // --- RENDERIZAÇÃO: VEÍCULOS (INTEGRADO COM SPRING BOOT) --- //
     async function renderizarAbaVeiculos() {
       try {
-        const resposta = await fetch(`${API_URL}/api/veiculos`);
+        const resposta = await apiFetch(`/api/veiculos`);
         if (resposta.ok) {
-          db.veiculos = await resposta.json();
+          db.veiculos = formatarRecurso(await resposta.json(), 'veiculos');
         }
       } catch (erro) {
         console.error("Erro ao buscar veículos do back-end:", erro);
+        db.veiculos = [];
       }
 
       return `
@@ -801,12 +767,12 @@
 
                   return `
                     <tr class="hover:bg-zinc-900/50">
-                      <td class="p-4 font-mono font-bold text-brand-yellow">${v.placa}</td>
-                      <td class="p-4 font-bold text-white">${v.marca} ${v.modelo}</td>
+                      <td class="p-4 font-mono font-bold text-brand-yellow">${escaparHtml(v.placa)}</td>
+                      <td class="p-4 font-bold text-white">${escaparHtml(v.marca)} ${escaparHtml(v.modelo)}</td>
                       <td class="p-4 text-zinc-400">${anoExibicao}</td>
                       <td class="p-4 text-zinc-400">${portasExibicao} p.</td>
                       <td class="p-4 font-mono text-zinc-300">${kmExibicao.toLocaleString('pt-BR')} KM</td>
-                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${v.situacao}</span></td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${escaparHtml(v.situacao)}</span></td>
                       <td class="p-4 text-right space-x-2">
                         <button onclick="editarVeiculo(${v.id})" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="excluirVeiculo(${v.id})" class="p-1.5 bg-red-950 hover:bg-red-900 text-red-400 rounded-lg"><i class="fa-solid fa-trash"></i></button>
@@ -840,17 +806,17 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Placa</label>
-                <input type="text" id="v-placa" value="${eEdicao ? veiculo.placa : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white uppercase font-mono">
+                <input type="text" id="v-placa" value="${escaparHtml(eEdicao ? veiculo.placa : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white uppercase font-mono">
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Marca</label>
-                <input type="text" id="v-marca" value="${eEdicao ? veiculo.marca : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                <input type="text" id="v-marca" value="${escaparHtml(eEdicao ? veiculo.marca : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Modelo</label>
-                <input type="text" id="v-modelo" value="${eEdicao ? veiculo.modelo : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                <input type="text" id="v-modelo" value="${escaparHtml(eEdicao ? veiculo.modelo : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Ano</label>
@@ -893,53 +859,20 @@
     async function salvarVeiculo(e, id) {
       e.preventDefault();
       const placa = document.getElementById('v-placa').value.toUpperCase();
-      const marca = document.getElementById('v-marca').value;
-      const modelo = document.getElementById('v-modelo').value;
-      const anoFabricacao = parseInt(document.getElementById('v-ano').value);
-      const quantidadePortas = parseInt(document.getElementById('v-portas').value);
+      const marca = document.getElementById('v-marca').value.trim();
+      const modelo = document.getElementById('v-modelo').value.trim();
+      const anoFabricacao = parseInt(document.getElementById('v-ano').value, 10);
+      const quantidadePortas = parseInt(document.getElementById('v-portas').value, 10);
       const quilometragem = parseFloat(document.getElementById('v-km').value);
-      const situacao = document.getElementById('v-situacao').value;
-
-      const veiculoData = { placa, marca, modelo, anoFabricacao, ano: anoFabricacao, quantidadePortas, portas: quantidadePortas, quilometragem, km: quilometragem, situacao };
-
-      const metodo = id ? 'PUT' : 'POST';
-      const url = id ? `${API_URL}/api/veiculos/${id}` : `${API_URL}/api/veiculos`;
-
+      const situacao = ({ 'Disponível': 'Disponivel', 'Em uso': 'Em_uso', 'Em manutenção': 'Em_manutencao', 'Inativo': 'Inativo' })[document.getElementById('v-situacao').value];
+      const payload = { placa, marca, modelo, anoFabricacao, quantidadePortas, quilometragem, situacao };
       try {
-        const resposta = await fetch(url, {
-          method: metodo,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(veiculoData)
-        });
-
-        if (resposta.ok) {
-          fecharModal();
-          alternarAba('veiculos');
-        } else {
-          // Fallback para alterar localmente se o servidor falhar
-          if (id) {
-            const v = db.veiculos.find(x => x.id === id);
-            if (v) Object.assign(v, veiculoData);
-          } else {
-            const novoId = db.veiculos.length ? Math.max(...db.veiculos.map(v => v.id)) + 1 : 1;
-            db.veiculos.push({ id: novoId, ...veiculoData });
-          }
-          salvarDB();
-          fecharModal();
-          alternarAba('veiculos');
-        }
-      } catch (erro) {
-        console.error("Erro na requisição:", erro);
-        if (id) {
-          const v = db.veiculos.find(x => x.id === id);
-          if (v) Object.assign(v, veiculoData);
-        } else {
-          const novoId = db.veiculos.length ? Math.max(...db.veiculos.map(v => v.id)) + 1 : 1;
-          db.veiculos.push({ id: novoId, ...veiculoData });
-        }
-        salvarDB();
+        const path = id ? `/api/veiculos/${id}` : '/api/veiculos';
+        await apiFetch(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
         fecharModal();
-        alternarAba('veiculos');
+        await alternarAba('veiculos');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível salvar o veículo.');
       }
     }
 
@@ -949,27 +882,25 @@
     }
 
     async function excluirVeiculo(id) {
-      if (confirm('Deseja realmente remover este veículo da frota?')) {
-        try {
-          await fetch(`${API_URL}/api/veiculos/${id}`, { method: 'DELETE' });
-        } catch (e) {
-          console.error("Erro ao deletar no servidor:", e);
-        }
-        db.veiculos = db.veiculos.filter(x => x.id !== id);
-        salvarDB();
-        alternarAba('veiculos');
+      if (!confirm('Deseja realmente remover este veículo da frota?')) return;
+      try {
+        await apiFetch(`/api/veiculos/${id}`, { method: 'DELETE' });
+        await alternarAba('veiculos');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível excluir o veículo.');
       }
     }
 
     // --- RENDERIZAÇÃO: FUNCIONÁRIOS --- //
     async function renderizarAbaFuncionarios() {
       try {
-        const resposta = await fetch(`${API_URL}/api/funcionarios`);
+        const resposta = await apiFetch(`/api/funcionarios`);
         if (resposta.ok) {
-          db.funcionarios = await resposta.json();
+          db.funcionarios = formatarRecurso(await resposta.json(), 'funcionarios');
         }
       } catch (e) {
         console.error("Erro ao buscar funcionários:", e);
+        db.funcionarios = [];
       }
 
       return `
@@ -989,10 +920,10 @@
               ${db.funcionarios.map(f => `
                 <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
                   <div>
-                    <p class="text-xs font-bold text-white">${f.nome}</p>
-                    <p class="text-[10px] text-zinc-400">${f.cargo} • ${f.telefone || f.email}</p>
+                    <p class="text-xs font-bold text-white">${escaparHtml(f.nome)}</p>
+                    <p class="text-[10px] text-zinc-400">${escaparHtml(f.cargo)} • ${escaparHtml(f.telefone || f.email)}</p>
                   </div>
-                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400">${f.situacao || 'Ativo'}</span>
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400">${escaparHtml(f.situacao || 'Ativo')}</span>
                 </div>
               `).join('')}
             </div>
@@ -1009,10 +940,10 @@
                 return `
                   <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
                     <div>
-                      <p class="text-xs font-bold text-white">${func ? func.nome : 'N/A'}</p>
-                      <p class="text-[10px] text-brand-yellow font-mono">Veículo: ${veic ? veic.placa + ' (' + veic.modelo + ')' : 'N/A'}</p>
+                      <p class="text-xs font-bold text-white">${escaparHtml(func ? func.nome : 'N/A')}</p>
+                      <p class="text-[10px] text-brand-yellow font-mono">Veículo: ${escaparHtml(veic ? veic.placa + ' (' + veic.modelo + ')' : 'N/A')}</p>
                     </div>
-                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${a.situacao === 'Ativa' ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-400'}">${a.situacao}</span>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${a.situacao === 'Ativa' ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-400'}">${escaparHtml(a.situacao)}</span>
                   </div>
                 `;
               }).join('')}
@@ -1025,12 +956,13 @@
     // --- RENDERIZAÇÃO: MANUTENÇÕES --- //
     async function renderizarAbaManutencoes() {
       try {
-        const resposta = await fetch(`${API_URL}/api/manutencoes`);
+        const resposta = await apiFetch(`/api/manutencoes`);
         if (resposta.ok) {
-          db.manutencoes = await resposta.json();
+          db.manutencoes = formatarRecurso(await resposta.json(), 'manutencoes');
         }
       } catch (e) {
         console.error("Erro ao buscar manutenções:", e);
+        db.manutencoes = [];
       }
 
       return `
@@ -1060,12 +992,12 @@
                   const dataPrev = m.data_prevista || m.dataPrevista || 'N/A';
                   return `
                     <tr class="hover:bg-zinc-900/50">
-                      <td class="p-4 font-mono font-bold text-brand-yellow">${veic ? veic.placa : 'N/A'}</td>
-                      <td class="p-4 font-bold text-white">${m.tipo}</td>
-                      <td class="p-4 text-zinc-300 max-w-xs truncate">${m.descricao}</td>
-                      <td class="p-4 text-zinc-400">${dataPrev}</td>
+                      <td class="p-4 font-mono font-bold text-brand-yellow">${escaparHtml(veic ? veic.placa : 'N/A')}</td>
+                      <td class="p-4 font-bold text-white">${escaparHtml(m.tipo)}</td>
+                      <td class="p-4 text-zinc-300 max-w-xs truncate">${escaparHtml(m.descricao)}</td>
+                      <td class="p-4 text-zinc-400">${escaparHtml(dataPrev)}</td>
                       <td class="p-4 font-mono text-emerald-400">R$ ${Number(m.valor).toFixed(2)}</td>
-                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-amber-400">${m.situacao}</span></td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-amber-400">${escaparHtml(m.situacao)}</span></td>
                     </tr>
                   `;
                 }).join('')}
@@ -1079,12 +1011,13 @@
     // --- RENDERIZAÇÃO: OBRIGAÇÕES LEGAIS --- //
     async function renderizarAbaObrigacoes() {
       try {
-        const resposta = await fetch(`${API_URL}/api/obrigacoes`);
+        const resposta = await apiFetch(`/api/obrigacoes`);
         if (resposta.ok) {
-          db.obrigacoes = await resposta.json();
+          db.obrigacoes = formatarRecurso(await resposta.json(), 'obrigacoes');
         }
       } catch (e) {
         console.error("Erro ao buscar obrigações:", e);
+        db.obrigacoes = [];
       }
 
       return `
@@ -1120,12 +1053,12 @@
 
                   return `
                     <tr class="hover:bg-zinc-900/50">
-                      <td class="p-4 font-mono font-bold text-brand-yellow">${veic ? veic.placa : 'N/A'}</td>
-                      <td class="p-4 font-bold text-white">${o.tipo}</td>
+                      <td class="p-4 font-mono font-bold text-brand-yellow">${escaparHtml(veic ? veic.placa : 'N/A')}</td>
+                      <td class="p-4 font-bold text-white">${escaparHtml(o.tipo)}</td>
                       <td class="p-4 text-zinc-400">${o.exercicio}</td>
-                      <td class="p-4 text-zinc-400">${venc}</td>
+                      <td class="p-4 text-zinc-400">${escaparHtml(venc)}</td>
                       <td class="p-4 font-mono text-white">R$ ${Number(o.valor).toFixed(2)}</td>
-                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${o.situacao}</span></td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${escaparHtml(o.situacao)}</span></td>
                       <td class="p-4 text-right">
                         ${o.situacao !== 'Pago' ? `
                           <button onclick="quitarObrigacao(${o.id})" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">Pagar</button>
@@ -1142,21 +1075,24 @@
     }
 
     async function quitarObrigacao(id) {
-      const o = db.obrigacoes.find(x => x.id === id);
-      if (o) {
-        o.situacao = 'Pago';
-        o.data_pagamento = new Date().toISOString().split('T')[0];
-        try {
-          await fetch(`${API_URL}/api/obrigacoes/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(o)
-          });
-        } catch (e) {
-          console.error("Erro ao quitar no servidor:", e);
-        }
-        salvarDB();
-        alternarAba('obrigacoes');
+      const obrigacao = db.obrigacoes.find(item => item.id === id);
+      if (!obrigacao) return;
+      try {
+        await apiFetch(`/api/obrigacoes/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            veiculo: { idVeiculo: obrigacao.id_veiculo },
+            tipoObrigacao: obrigacao.tipo,
+            exercicio: obrigacao.exercicio,
+            valor: obrigacao.valor,
+            dataVencimento: obrigacao.data_vencimento,
+            dataPagamento: new Date().toISOString().slice(0, 10),
+            situacao: 'Pago'
+          })
+        });
+        await alternarAba('obrigacoes');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível quitar a obrigação.');
       }
     }
 
@@ -1193,7 +1129,7 @@
 
     function inicializarGraficoRelatorios() {
       const ctx = document.getElementById('relatoriosChart');
-      if (!ctx) return;
+      if (!ctx || typeof Chart === 'undefined') return;
       if (graficoAtivo) graficoAtivo.destroy();
 
       const totalManut = db.manutencoes.reduce((acc, m) => acc + Number(m.valor || 0), 0);

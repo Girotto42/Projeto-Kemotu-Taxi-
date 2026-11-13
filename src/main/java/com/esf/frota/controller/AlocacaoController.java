@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/alocacoes")
-@CrossOrigin(origins = "*")
 public class AlocacaoController {
 
     @Autowired

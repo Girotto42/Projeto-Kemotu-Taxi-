@@ -1,13 +1,12 @@
 package com.esf.frota.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @Entity
 @Table(name = "funcionario")
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Funcionario {
 
     @Id
@@ -30,6 +29,7 @@ public class Funcionario {
     private String email;
 
     @Column(nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
     @Enumerated(EnumType.STRING)

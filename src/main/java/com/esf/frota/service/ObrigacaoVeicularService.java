@@ -2,6 +2,7 @@ package com.esf.frota.service;
 
 import com.esf.frota.model.ObrigacaoVeicular;
 import com.esf.frota.repository.ObrigacaoVeicularRepository;
+import com.esf.frota.repository.VeiculoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ public class ObrigacaoVeicularService {
 
     @Autowired
     private ObrigacaoVeicularRepository obrigacaoVeicularRepository;
+    @Autowired private VeiculoRepository veiculoRepository;
 
     public List<ObrigacaoVeicular> listarTodas() {
         return obrigacaoVeicularRepository.findAll();
@@ -23,7 +25,8 @@ public class ObrigacaoVeicularService {
     }
 
     public ObrigacaoVeicular salvar(ObrigacaoVeicular obrigacao) {
-        // Regras adicionais de obrigações (ex: verificar data de vencimento) podem entrar aqui
+        if (obrigacao.getVeiculo() != null && obrigacao.getVeiculo().getIdVeiculo() != null)
+            obrigacao.setVeiculo(veiculoRepository.getReferenceById(obrigacao.getVeiculo().getIdVeiculo()));
         return obrigacaoVeicularRepository.save(obrigacao);
     }
 
