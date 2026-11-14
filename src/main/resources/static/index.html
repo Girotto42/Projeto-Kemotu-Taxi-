@@ -290,6 +290,9 @@
           <h2 id="header-page-title" class="text-sm font-bold text-white uppercase tracking-wider">Painel Geral • Indicadores da Frota</h2>
         </div>
         <div class="flex items-center gap-3">
+          <!--<span id="mock-badge" class="hidden sm:inline-flex px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[11px] font-bold text-emerald-400">
+            <i class="fa-solid fa-database mr-1.5"></i> Modo Mock (Live Server)
+          </span>-->
           <span class="hidden sm:inline-flex px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-[11px] font-bold text-brand-yellow">
             <i class="fa-solid fa-shield-halved mr-1.5"></i> Conformidade LGPD
           </span>
@@ -317,6 +320,47 @@
   <!-- 3. MOTOR JAVASCRIPT EM PORTUGUÊS (PT-BR) -->
   <!-- ========================================== -->
   <script>
+    // ==========================================
+    // MODO MOCK / BANCO CHUMBADO PARA LIVE SERVER
+    // ==========================================
+    // Defina como 'true' para testar offline via Live Server.
+    // Quando religar o Spring Boot, basta mudar para 'false'.
+    const USAR_BANCO_MOCK = true;
+
+    const bancoMockInicial = {
+      funcionarios: [
+        { idFuncionario: 1, nome: 'Roberto Mendes', email: 'roberto.mendes@kemotutaxi.com.br', senha: '12345678', cpf: '345.678.901-22', cargo: 'Gestor de Frota', telefone: '(18) 99823-1122', situacao: 'Ativo' },
+        { idFuncionario: 2, nome: 'Carlos Eduardo Silva', email: 'carlos@kemotutaxi.com.br', senha: '12345678', cpf: '123.456.789-00', cargo: 'Motorista Titular', telefone: '(18) 99712-3456', situacao: 'Ativo' },
+        { idFuncionario: 3, nome: 'Ana Paula Ferreira', email: 'ana.paula@kemotutaxi.com.br', senha: '12345678', cpf: '234.567.890-11', cargo: 'Motorista Noturno', telefone: '(18) 99654-9876', situacao: 'Ativo' }
+      ],
+      veiculos: [
+        { idVeiculo: 1, placa: 'ABC1D23', marca: 'Chevrolet', modelo: 'Onix Sedan', anoFabricacao: 2023, quantidadePortas: 4, quilometragem: 45200, situacao: 'Em_uso' },
+        { idVeiculo: 2, placa: 'KMT4E56', marca: 'Toyota', modelo: 'Corolla Hybrid', anoFabricacao: 2024, quantidadePortas: 4, quilometragem: 18500, situacao: 'Disponivel' },
+        { idVeiculo: 3, placa: 'RIO9F88', marca: 'Hyundai', modelo: 'HB20S', anoFabricacao: 2022, quantidadePortas: 4, quilometragem: 78900, situacao: 'Em_manutencao' },
+        { idVeiculo: 4, placa: 'FTE3A11', marca: 'Volkswagen', modelo: 'Virtus', anoFabricacao: 2023, quantidadePortas: 4, quilometragem: 32100, situacao: 'Em_uso' }
+      ],
+      alocacoes: [
+        { idAlocacao: 1, funcionario: { idFuncionario: 2 }, veiculo: { idVeiculo: 1 }, dataInicio: '2024-01-15', situacao: 'Ativa' },
+        { idAlocacao: 2, funcionario: { idFuncionario: 3 }, veiculo: { idVeiculo: 4 }, dataInicio: '2024-02-01', situacao: 'Ativa' }
+      ],
+      manutencoes: [
+        { idManutencao: 1, veiculo: { idVeiculo: 3 }, tipoManutencao: 'Corretiva', descricao: 'Troca da caixa de câmbio e pastilhas de freio', dataPrevista: '2026-11-08', valor: 3450.00, situacao: 'Em_andamento' },
+        { idManutencao: 2, veiculo: { idVeiculo: 1 }, tipoManutencao: 'Preventiva', descricao: 'Troca de óleo, filtro de ar e alinhamento', dataPrevista: '2026-10-10', valor: 650.00, situacao: 'Concluida' },
+        { idManutencao: 3, veiculo: { idVeiculo: 2 }, tipoManutencao: 'Preventiva', descricao: 'Revisão geral de 20.000 KM', dataPrevista: '2026-11-20', valor: 890.00, situacao: 'Programada' }
+      ],
+      obrigacoes: [
+        { idObrigacao: 1, veiculo: { idVeiculo: 1 }, tipoObrigacao: 'IPVA 2026', exercicio: 2026, valor: 1850.00, dataVencimento: '2026-03-15', dataPagamento: '2026-03-10', situacao: 'Pago' },
+        { idObrigacao: 2, veiculo: { idVeiculo: 3 }, tipoObrigacao: 'Licenciamento Anual', exercicio: 2026, valor: 160.00, dataVencimento: '2026-11-12', dataPagamento: null, situacao: 'Pendente' },
+        { idObrigacao: 3, veiculo: { idVeiculo: 4 }, tipoObrigacao: 'Multa Excesso de Velocidade', exercicio: 2026, valor: 195.23, dataVencimento: '2026-10-25', dataPagamento: null, situacao: 'Vencido' },
+        { idObrigacao: 4, veiculo: { idVeiculo: 2 }, tipoObrigacao: 'Vistoria Semestral TÁXI', exercicio: 2026, valor: 280.00, dataVencimento: '2026-11-30', dataPagamento: null, situacao: 'Pendente' }
+      ]
+    };
+
+    let mockDb = JSON.parse(localStorage.getItem('esf_mock_db')) || bancoMockInicial;
+    function salvarMockDb() {
+      localStorage.setItem('esf_mock_db', JSON.stringify(mockDb));
+    }
+
     // URL Base do Back-end Spring Boot
     const API_URL = window.location.origin;
     let apiAuthorization = null;
@@ -334,7 +378,80 @@
       return btoa(binario);
     }
 
+    // --- INTERCEPTOR DE API (SUPORTE AO MOCK OU SPRING BOOT) --- //
     async function apiFetch(path, options = {}) {
+      if (USAR_BANCO_MOCK) {
+        await new Promise(r => setTimeout(r, 60)); // Simula latência de rede
+        const method = options.method || 'GET';
+        const body = options.body ? JSON.parse(options.body) : null;
+
+        // 1. Autenticação: Login
+        if (path === '/api/auth/login' && method === 'POST') {
+          const usuario = mockDb.funcionarios.find(f => f.email.toLowerCase() === body.email.toLowerCase() && f.senha === body.senha);
+          if (usuario) return { ok: true, json: async () => usuario };
+          throw new Error('E-mail ou senha incorretos.');
+        }
+
+        // 2. Autenticação: Registro de Conta
+        if (path === '/api/auth/register' && method === 'POST') {
+          if (mockDb.funcionarios.some(f => f.email.toLowerCase() === body.email.toLowerCase())) {
+            throw new Error('E-mail já cadastrado no sistema.');
+          }
+          const novoId = mockDb.funcionarios.length ? Math.max(...mockDb.funcionarios.map(f => f.idFuncionario)) + 1 : 1;
+          const novoFunc = { idFuncionario: novoId, ...body, situacao: 'Ativo' };
+          mockDb.funcionarios.push(novoFunc);
+          salvarMockDb();
+          return { ok: true, status: 201, json: async () => novoFunc };
+        }
+
+        // 3. Gestão de Veículos
+        if (path.startsWith('/api/veiculos')) {
+          if (method === 'GET') return { ok: true, json: async () => mockDb.veiculos };
+          if (method === 'POST') {
+            const novoId = mockDb.veiculos.length ? Math.max(...mockDb.veiculos.map(v => v.idVeiculo)) + 1 : 1;
+            const novoVeic = { idVeiculo: novoId, ...body };
+            mockDb.veiculos.push(novoVeic);
+            salvarMockDb();
+            return { ok: true, status: 201, json: async () => novoVeic };
+          }
+          if (method === 'PUT') {
+            const id = parseInt(path.split('/').pop(), 10);
+            const idx = mockDb.veiculos.findIndex(v => v.idVeiculo === id);
+            if (idx !== -1) {
+              mockDb.veiculos[idx] = { idVeiculo: id, ...body };
+              salvarMockDb();
+              return { ok: true, json: async () => mockDb.veiculos[idx] };
+            }
+          }
+          if (method === 'DELETE') {
+            const id = parseInt(path.split('/').pop(), 10);
+            mockDb.veiculos = mockDb.veiculos.filter(v => v.idVeiculo !== id);
+            salvarMockDb();
+            return { ok: true, status: 204, json: async () => ({}) };
+          }
+        }
+
+        // 4. Outras Listagens e Ações (Funcionários, Alocações, Manutenções, Obrigações)
+        if (path === '/api/funcionarios' && method === 'GET') return { ok: true, json: async () => mockDb.funcionarios };
+        if (path === '/api/alocacoes' && method === 'GET') return { ok: true, json: async () => mockDb.alocacoes };
+        if (path === '/api/manutencoes' && method === 'GET') return { ok: true, json: async () => mockDb.manutencoes };
+        if (path.startsWith('/api/obrigacoes')) {
+          if (method === 'GET') return { ok: true, json: async () => mockDb.obrigacoes };
+          if (method === 'PUT') {
+            const id = parseInt(path.split('/').pop(), 10);
+            const idx = mockDb.obrigacoes.findIndex(o => o.idObrigacao === id);
+            if (idx !== -1) {
+              mockDb.obrigacoes[idx] = { ...mockDb.obrigacoes[idx], ...body };
+              salvarMockDb();
+              return { ok: true, json: async () => mockDb.obrigacoes[idx] };
+            }
+          }
+        }
+
+        return { ok: true, json: async () => [] };
+      }
+
+      // Requisição real para o Spring Boot quando USAR_BANCO_MOCK = false
       const headers = new Headers(options.headers || {});
       if (apiAuthorization) headers.set('Authorization', apiAuthorization);
       if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
@@ -421,6 +538,11 @@
       document.getElementById('auth-logo-wrapper').innerHTML = obterLogoESFSVG('large');
       document.getElementById('sidebar-logo-wrapper').innerHTML = obterLogoESFSVG('normal');
 
+      if (!USAR_BANCO_MOCK) {
+        const badge = document.getElementById('mock-badge');
+        if (badge) badge.classList.add('hidden');
+      }
+
       exibirTelaLogin();
     };
 
@@ -439,7 +561,7 @@
       alternarAba(abaAtiva);
     }
 
-    // --- LÓGICA DE AUTENTICAÇÃO E CADASTRO (INTEGRADA COM SPRING BOOT) --- //
+    // --- LÓGICA DE AUTENTICAÇÃO E CADASTRO --- //
     function alternarAbaAutenticacao(aba) {
       ocultarAlertaAutenticacao();
       const btnLogin = document.getElementById('tab-login-btn');
@@ -487,11 +609,10 @@
       const email = document.getElementById('login-email').value.trim().toLowerCase();
       const senha = document.getElementById('login-password').value;
       try {
-        const resposta = await fetch(`${API_URL}/api/auth/login`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+        const resposta = await apiFetch('/api/auth/login', {
+          method: 'POST',
           body: JSON.stringify({ email, senha })
         });
-        if (!resposta.ok) throw new Error('E-mail ou senha incorretos.');
         usuarioAtual = await resposta.json();
         apiAuthorization = `Basic ${base64Utf8(`${email}:${senha}`)}`;
         await carregarDadosApi();
@@ -513,18 +634,14 @@
       const confirmarSenha = document.getElementById('reg-confirm').value;
       if (senha !== confirmarSenha) return exibirAlertaAutenticacao('As senhas digitadas não coincidem.');
       try {
-        const resposta = await fetch(`${API_URL}/api/auth/register`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+        await apiFetch('/api/auth/register', {
+          method: 'POST',
           body: JSON.stringify({ nome, email, cpf, cargo, senha })
         });
-        if (!resposta.ok) {
-          const erro = await resposta.json().catch(() => ({}));
-          throw new Error(erro.message || 'Não foi possível cadastrar. Verifique os dados informados.');
-        }
-        alert('Cadastro realizado com sucesso. Faça login para continuar.');
+        alert('Cadastro realizado com sucesso! Faça login para continuar.');
         alternarAbaAutenticacao('login');
       } catch (erro) {
-        exibirAlertaAutenticacao(erro.message || 'Não foi possível conectar ao servidor.');
+        exibirAlertaAutenticacao(erro.message || 'Não foi possível cadastrar. Verifique os dados informados.');
       }
     }
 
@@ -550,7 +667,7 @@
       exibirAlertaAutenticacao('Recuperação de senha ainda não configurada. Contate a equipe responsável.');
     }
 
-    // --- NAVEGAÇÃO DE ABAS DO PAINEL PRINCIPAL (COM AWAIT PARA FETCH) --- //
+    // --- NAVEGAÇÃO DE ABAS DO PAINEL PRINCIPAL --- //
     async function alternarAba(idAba) {
       abaAtiva = idAba;
       
@@ -587,10 +704,9 @@
       if (idAba === 'relatorios') inicializarGraficoRelatorios();
     }
 
-    // --- RENDEREZAÇÃO: DASHBOARD --- //
+    // --- RENDERIZAÇÃO: DASHBOARD --- //
     function renderizarAbaDashboard() {
       const emUso = db.veiculos.filter(v => v.situacao === 'Em uso').length;
-      const disponiveis = db.veiculos.filter(v => v.situacao === 'Disponível').length;
       const totalVeiculos = db.veiculos.length;
       const manutencoesPendentes = db.manutencoes.filter(m => m.situacao !== 'Concluída').length;
       const obrigacoesPendentes = db.obrigacoes.filter(o => o.situacao !== 'Pago').length;
@@ -717,7 +833,7 @@
       });
     }
 
-    // --- RENDERIZAÇÃO: VEÍCULOS (INTEGRADO COM SPRING BOOT) --- //
+    // --- RENDERIZAÇÃO: VEÍCULOS --- //
     async function renderizarAbaVeiculos() {
       try {
         const resposta = await apiFetch(`/api/veiculos`);
@@ -725,7 +841,7 @@
           db.veiculos = formatarRecurso(await resposta.json(), 'veiculos');
         }
       } catch (erro) {
-        console.error("Erro ao buscar veículos do back-end:", erro);
+        console.error("Erro ao buscar veículos:", erro);
         db.veiculos = [];
       }
 
