@@ -85,9 +85,9 @@
     <div class="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
       
       <!-- ESF Vector Logo Container -->
-      <div id="auth-logo-wrapper" class="flex flex-col items-center mb-6">
-        <!-- SVG Logo injected via Javascript -->
-      </div>
+     <div id="auth-logo-wrapper" class="flex flex-col items-center mb-6">
+     <img src="ESF_logo.png" alt="ESF - Easy System Fleet" class="w-72 sm:w-80 h-auto">
+     </div>
 
       <!-- System Subtitle -->
       <div class="flex items-center justify-center gap-2 mb-6">
@@ -233,9 +233,10 @@
     <aside id="main-sidebar" class="w-full md:w-64 bg-brand-surface border-r border-brand-border flex flex-col shrink-0">
       <!-- Cabeçalho do Menu com a Logo Oficial ESF -->
       <div class="p-4 border-b border-brand-border flex items-center justify-between bg-black/40">
-        <div id="sidebar-logo-wrapper" class="w-44 flex justify-center py-1">
-          <!-- Logo Exata SVG Renderizada aqui -->
-        </div>
+        <!-- Cabeçalho do Menu com a Logo Oficial ESF -->
+      <div id="sidebar-logo-wrapper" class="w-44 flex justify-center py-1">
+      <img src="ESF_logo.png" alt="ESF Logo" class="w-full h-auto">
+      </div>
         <button onclick="alternarSidebarMobile()" class="md:hidden text-zinc-400 hover:text-white">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -480,8 +481,9 @@
     let abaAtiva = 'dashboard';
     let graficoAtivo = null;
 
+    
     // --- GERADOR DA LOGO OFICIAL ESF EM SVG --- //
-    function obterLogoESFSVG(tamanho = 'normal') {
+   /* function obterLogoESFSVG(tamanho = 'normal') {
       const classeLargura = tamanho === 'large' ? 'w-72 sm:w-80' : 'w-44';
       return `
         <div class="flex flex-col items-center justify-center select-none ${classeLargura}">
@@ -494,44 +496,46 @@
               </linearGradient>
             </defs>
 
-            <!-- Arco Superior Amarelo com Pista -->
+            Arco Superior Amarelo com Pista
             <path d="M 148 90 C 230 18, 390 10, 452 84 C 472 108, 470 132, 388 130 C 438 118, 442 88, 400 58 C 340 16, 220 28, 148 90 Z" fill="url(#gradienteAmarelo)" />
             
-            <!-- Pista de Rodovia Preta e Branca -->
+             Pista de Rodovia Preta e Branca 
             <path d="M 292 66 C 360 20, 440 43, 432 106" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
             <path d="M 292 66 C 360 20, 440 43, 432 106" fill="none" stroke="#000000" stroke-width="6" stroke-dasharray="10 8" />
 
-            <!-- Marcador de Mapa (Pin GPS) no Topo -->
+             Marcador de Mapa (Pin GPS) no Topo 
             <g transform="translate(396, 30)">
               <path d="M 20 0 C 8.9 0 0 8.9 0 20 C 0 35 20 54 20 54 C 20 54 40 35 40 20 C 40 8.9 31.1 0 20 0 Z" fill="url(#gradienteAmarelo)" />
               <circle cx="20" cy="18" r="7" fill="#000000" />
             </g>
 
-            <!-- Letra 'E' com Linhas de Velocidade -->
+             Letra 'E' com Linhas de Velocidade
             <polygon points="50,108 80,108 75,120 40,120" fill="url(#gradienteAmarelo)" />
             <polygon points="35,126 70,126 65,138 26,138" fill="url(#gradienteAmarelo)" />
             <path d="M 12 144 L 180 144 L 170 178 L 72 178 L 80 158 L 155 158 L 160 144 L 12 144 Z" fill="url(#gradienteAmarelo)" />
             <path d="M 68 84 L 195 84 L 182 116 L 115 116 L 110 130 L 175 130 L 168 146 L 98 146 L 88 178 L 190 178 L 178 206 L 30 206 Z" fill="url(#gradienteAmarelo)" />
 
-            <!-- Letra 'S' em Branco Inclinações -->
+            Letra 'S' em Branco Inclinações 
             <path d="M 275 84 L 320 84 C 342 84, 350 94, 344 108 C 340 118, 328 124, 310 128 C 335 134, 338 148, 330 168 C 322 190, 302 206, 260 206 L 178 206 L 190 176 L 255 176 C 275 176, 283 170, 287 160 C 291 150, 285 144, 265 144 L 236 144 C 205 144, 202 126, 210 110 C 218 88, 240 84, 275 84 Z" fill="#FFFFFF" />
 
-            <!-- Letra 'F' em Amarelo -->
+             Letra 'F' em Amarelo 
             <path d="M 320 84 L 425 84 L 413 114 L 360 114 L 352 134 L 400 134 L 388 162 L 342 162 L 328 206 L 290 206 Z" fill="url(#gradienteAmarelo)" />
 
-            <!-- Texto Rebaixado: "Easy System Fleet" -->
+             Texto Rebaixado: "Easy System Fleet" 
             <text x="50" y="240" font-family="'Segoe UI', Roboto, sans-serif" font-weight="900" font-style="italic" font-size="36">
               <tspan fill="url(#gradienteAmarelo)">Easy </tspan>
               <tspan fill="#FFFFFF">System </tspan>
               <tspan fill="url(#gradienteAmarelo)">Fleet</tspan>
             </text>
 
-            <!-- Curva Amarela Inferior -->
+             Curva Amarela Inferior 
             <path d="M 78 258 C 200 252, 360 247, 435 252 C 445 253, 300 256, 78 258 Z" fill="url(#gradienteAmarelo)" />
           </svg>
         </div>
       `;
     }
+  */
+
 
     // --- CARREGAMENTO INICIAL DO SISTEMA --- //
     window.onload = function() {
