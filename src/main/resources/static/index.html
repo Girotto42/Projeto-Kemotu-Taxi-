@@ -85,10 +85,10 @@
     <!-- Auth Card -->
     <div class="w-full max-w-md glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
       
-      <!-- ESF Vector Logo Container -->
-     <div id="auth-logo-wrapper" class="flex flex-col items-center mb-6">
-     <img src="ESF_logo.png" alt="ESF - Easy System Fleet" class="w-72 sm:w-80 h-auto">
-     </div>
+      <!-- ESF Logo Container -->
+      <div id="auth-logo-wrapper" class="flex flex-col items-center mb-6">
+        <img src="ESF_logo.png" alt="ESF - Easy System Fleet" class="w-72 sm:w-80 h-auto">
+      </div>
 
       <!-- System Subtitle -->
       <div class="flex items-center justify-center gap-2 mb-6">
@@ -234,10 +234,9 @@
     <aside id="main-sidebar" class="w-full md:w-64 bg-brand-surface border-r border-brand-border flex flex-col shrink-0">
       <!-- Cabeçalho do Menu com a Logo Oficial ESF -->
       <div class="p-4 border-b border-brand-border flex items-center justify-between bg-black/40">
-        <!-- Cabeçalho do Menu com a Logo Oficial ESF -->
-      <div id="sidebar-logo-wrapper" class="w-44 flex justify-center py-1">
-      <img src="ESF_logo.png" alt="ESF Logo" class="w-full h-auto">
-      </div>
+        <div id="sidebar-logo-wrapper" class="w-44 flex justify-center py-1">
+          <img src="ESF_logo.png" alt="ESF Logo" class="w-full h-auto">
+        </div>
         <button onclick="alternarSidebarMobile()" class="md:hidden text-zinc-400 hover:text-white">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -292,9 +291,6 @@
           <h2 id="header-page-title" class="text-sm font-bold text-white uppercase tracking-wider">Painel Geral • Indicadores da Frota</h2>
         </div>
         <div class="flex items-center gap-3">
-          <!--<span id="mock-badge" class="hidden sm:inline-flex px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-[11px] font-bold text-emerald-400">
-            <i class="fa-solid fa-database mr-1.5"></i> Modo Mock (Live Server)
-          </span>-->
           <span class="hidden sm:inline-flex px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-[11px] font-bold text-brand-yellow">
             <i class="fa-solid fa-shield-halved mr-1.5"></i> Conformidade LGPD
           </span>
@@ -433,20 +429,111 @@
           }
         }
 
-        // 4. Outras Listagens e Ações (Funcionários, Alocações, Manutenções, Obrigações)
-        if (path === '/api/funcionarios' && method === 'GET') return { ok: true, json: async () => mockDb.funcionarios };
-        if (path === '/api/alocacoes' && method === 'GET') return { ok: true, json: async () => mockDb.alocacoes };
-        if (path === '/api/manutencoes' && method === 'GET') return { ok: true, json: async () => mockDb.manutencoes };
+        // 4. Gestão de Funcionários
+        if (path.startsWith('/api/funcionarios')) {
+          if (method === 'GET') return { ok: true, json: async () => mockDb.funcionarios };
+          if (method === 'POST') {
+            const novoId = mockDb.funcionarios.length ? Math.max(...mockDb.funcionarios.map(f => f.idFuncionario)) + 1 : 1;
+            const novoFunc = { idFuncionario: novoId, ...body };
+            mockDb.funcionarios.push(novoFunc);
+            salvarMockDb();
+            return { ok: true, status: 201, json: async () => novoFunc };
+          }
+          if (method === 'PUT') {
+            const id = parseInt(path.split('/').pop(), 10);
+            const idx = mockDb.funcionarios.findIndex(f => f.idFuncionario === id);
+            if (idx !== -1) {
+              mockDb.funcionarios[idx] = { ...mockDb.funcionarios[idx], ...body, idFuncionario: id };
+              salvarMockDb();
+              return { ok: true, json: async () => mockDb.funcionarios[idx] };
+            }
+          }
+          if (method === 'DELETE') {
+            const id = parseInt(path.split('/').pop(), 10);
+            mockDb.funcionarios = mockDb.funcionarios.filter(f => f.idFuncionario !== id);
+            salvarMockDb();
+            return { ok: true, status: 204, json: async () => ({}) };
+          }
+        }
+
+        // 5. Gestão de Alocações / Vinculações
+        if (path.startsWith('/api/alocacoes')) {
+          if (method === 'GET') return { ok: true, json: async () => mockDb.alocacoes };
+          if (method === 'POST') {
+            const novoId = mockDb.alocacoes.length ? Math.max(...mockDb.alocacoes.map(a => a.idAlocacao)) + 1 : 1;
+            const novaAloc = { idAlocacao: novoId, ...body };
+            mockDb.alocacoes.push(novaAloc);
+            salvarMockDb();
+            return { ok: true, status: 201, json: async () => novaAloc };
+          }
+          if (method === 'PUT') {
+            const id = parseInt(path.split('/').pop(), 10);
+            const idx = mockDb.alocacoes.findIndex(a => a.idAlocacao === id);
+            if (idx !== -1) {
+              mockDb.alocacoes[idx] = { ...mockDb.alocacoes[idx], ...body, idAlocacao: id };
+              salvarMockDb();
+              return { ok: true, json: async () => mockDb.alocacoes[idx] };
+            }
+          }
+          if (method === 'DELETE') {
+            const id = parseInt(path.split('/').pop(), 10);
+            mockDb.alocacoes = mockDb.alocacoes.filter(a => a.idAlocacao !== id);
+            salvarMockDb();
+            return { ok: true, status: 204, json: async () => ({}) };
+          }
+        }
+
+        // 6. Gestão de Manutenções
+        if (path.startsWith('/api/manutencoes')) {
+          if (method === 'GET') return { ok: true, json: async () => mockDb.manutencoes };
+          if (method === 'POST') {
+            const novoId = mockDb.manutencoes.length ? Math.max(...mockDb.manutencoes.map(m => m.idManutencao)) + 1 : 1;
+            const novaManut = { idManutencao: novoId, ...body };
+            mockDb.manutencoes.push(novaManut);
+            salvarMockDb();
+            return { ok: true, status: 201, json: async () => novaManut };
+          }
+          if (method === 'PUT') {
+            const id = parseInt(path.split('/').pop(), 10);
+            const idx = mockDb.manutencoes.findIndex(m => m.idManutencao === id);
+            if (idx !== -1) {
+              mockDb.manutencoes[idx] = { ...mockDb.manutencoes[idx], ...body, idManutencao: id };
+              salvarMockDb();
+              return { ok: true, json: async () => mockDb.manutencoes[idx] };
+            }
+          }
+          if (method === 'DELETE') {
+            const id = parseInt(path.split('/').pop(), 10);
+            mockDb.manutencoes = mockDb.manutencoes.filter(m => m.idManutencao !== id);
+            salvarMockDb();
+            return { ok: true, status: 204, json: async () => ({}) };
+          }
+        }
+
+        // 7. Gestão de Obrigações Legais
         if (path.startsWith('/api/obrigacoes')) {
           if (method === 'GET') return { ok: true, json: async () => mockDb.obrigacoes };
+          if (method === 'POST') {
+            const novoId = mockDb.obrigacoes.length ? Math.max(...mockDb.obrigacoes.map(o => o.idObrigacao)) + 1 : 1;
+            const novaObrig = { idObrigacao: novoId, ...body };
+            mockDb.obrigacoes.push(novaObrig);
+            salvarMockDb();
+            return { ok: true, status: 201, json: async () => novaObrig };
+          }
           if (method === 'PUT') {
             const id = parseInt(path.split('/').pop(), 10);
             const idx = mockDb.obrigacoes.findIndex(o => o.idObrigacao === id);
             if (idx !== -1) {
-              mockDb.obrigacoes[idx] = { ...mockDb.obrigacoes[idx], ...body };
+              mockDb.obrigacoes[idx] = { ...mockDb.obrigacoes[idx], ...body, idObrigacao: id };
               salvarMockDb();
               return { ok: true, json: async () => mockDb.obrigacoes[idx] };
             }
+          }
+          if (method === 'DELETE') {
+            const id = parseInt(path.split('/').pop(), 10);
+            mockDb.obrigacoes = mockDb.obrigacoes.filter(o => o.idObrigacao !== id);
+            salvarMockDb();
+            return { ok: true, status: 204, json: async () => ({}) };
           }
         }
 
@@ -482,72 +569,8 @@
     let abaAtiva = 'dashboard';
     let graficoAtivo = null;
 
-    
-    // --- GERADOR DA LOGO OFICIAL ESF EM SVG --- //
-   /* function obterLogoESFSVG(tamanho = 'normal') {
-      const classeLargura = tamanho === 'large' ? 'w-72 sm:w-80' : 'w-44';
-      return `
-        <div class="flex flex-col items-center justify-center select-none ${classeLargura}">
-          <svg viewBox="0 0 500 270" class="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="gradienteAmarelo" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FFD700" />
-                <stop offset="60%" stop-color="#F59E0B" />
-                <stop offset="100%" stop-color="#D97706" />
-              </linearGradient>
-            </defs>
-
-            Arco Superior Amarelo com Pista
-            <path d="M 148 90 C 230 18, 390 10, 452 84 C 472 108, 470 132, 388 130 C 438 118, 442 88, 400 58 C 340 16, 220 28, 148 90 Z" fill="url(#gradienteAmarelo)" />
-            
-             Pista de Rodovia Preta e Branca 
-            <path d="M 292 66 C 360 20, 440 43, 432 106" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
-            <path d="M 292 66 C 360 20, 440 43, 432 106" fill="none" stroke="#000000" stroke-width="6" stroke-dasharray="10 8" />
-
-             Marcador de Mapa (Pin GPS) no Topo 
-            <g transform="translate(396, 30)">
-              <path d="M 20 0 C 8.9 0 0 8.9 0 20 C 0 35 20 54 20 54 C 20 54 40 35 40 20 C 40 8.9 31.1 0 20 0 Z" fill="url(#gradienteAmarelo)" />
-              <circle cx="20" cy="18" r="7" fill="#000000" />
-            </g>
-
-             Letra 'E' com Linhas de Velocidade
-            <polygon points="50,108 80,108 75,120 40,120" fill="url(#gradienteAmarelo)" />
-            <polygon points="35,126 70,126 65,138 26,138" fill="url(#gradienteAmarelo)" />
-            <path d="M 12 144 L 180 144 L 170 178 L 72 178 L 80 158 L 155 158 L 160 144 L 12 144 Z" fill="url(#gradienteAmarelo)" />
-            <path d="M 68 84 L 195 84 L 182 116 L 115 116 L 110 130 L 175 130 L 168 146 L 98 146 L 88 178 L 190 178 L 178 206 L 30 206 Z" fill="url(#gradienteAmarelo)" />
-
-            Letra 'S' em Branco Inclinações 
-            <path d="M 275 84 L 320 84 C 342 84, 350 94, 344 108 C 340 118, 328 124, 310 128 C 335 134, 338 148, 330 168 C 322 190, 302 206, 260 206 L 178 206 L 190 176 L 255 176 C 275 176, 283 170, 287 160 C 291 150, 285 144, 265 144 L 236 144 C 205 144, 202 126, 210 110 C 218 88, 240 84, 275 84 Z" fill="#FFFFFF" />
-
-             Letra 'F' em Amarelo 
-            <path d="M 320 84 L 425 84 L 413 114 L 360 114 L 352 134 L 400 134 L 388 162 L 342 162 L 328 206 L 290 206 Z" fill="url(#gradienteAmarelo)" />
-
-             Texto Rebaixado: "Easy System Fleet" 
-            <text x="50" y="240" font-family="'Segoe UI', Roboto, sans-serif" font-weight="900" font-style="italic" font-size="36">
-              <tspan fill="url(#gradienteAmarelo)">Easy </tspan>
-              <tspan fill="#FFFFFF">System </tspan>
-              <tspan fill="url(#gradienteAmarelo)">Fleet</tspan>
-            </text>
-
-             Curva Amarela Inferior 
-            <path d="M 78 258 C 200 252, 360 247, 435 252 C 445 253, 300 256, 78 258 Z" fill="url(#gradienteAmarelo)" />
-          </svg>
-        </div>
-      `;
-    }
-  */
-
-
     // --- CARREGAMENTO INICIAL DO SISTEMA --- //
     window.onload = function() {
-      document.getElementById('auth-logo-wrapper').innerHTML = obterLogoESFSVG('large');
-      document.getElementById('sidebar-logo-wrapper').innerHTML = obterLogoESFSVG('normal');
-
-      if (!USAR_BANCO_MOCK) {
-        const badge = document.getElementById('mock-badge');
-        if (badge) badge.classList.add('hidden');
-      }
-
       exibirTelaLogin();
     };
 
@@ -724,7 +747,7 @@
             </div>
             <div>
               <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Frota Total</p>
-              <h3 class="text-2xl font-black text-white">${totalVeiculos} <span class="text-xs font-normal text-zinc-400">veículos</span></h3>
+              <h3 class="text-2xl font-black text-brand-yellow">${totalVeiculos} <span class="text-xs font-normal text-zinc-400">veículos</span></h3>
             </div>
           </div>
 
@@ -1012,23 +1035,34 @@
       }
     }
 
-    // --- RENDERIZAÇÃO: FUNCIONÁRIOS --- //
+    // --- RENDERIZAÇÃO: FUNCIONÁRIOS & ALOCAÇÕES --- //
     async function renderizarAbaFuncionarios() {
       try {
-        const resposta = await apiFetch(`/api/funcionarios`);
-        if (resposta.ok) {
-          db.funcionarios = formatarRecurso(await resposta.json(), 'funcionarios');
-        }
+        const [respFunc, respAloc, respVeic] = await Promise.all([
+          apiFetch('/api/funcionarios'),
+          apiFetch('/api/alocacoes'),
+          apiFetch('/api/veiculos')
+        ]);
+        if (respFunc.ok) db.funcionarios = formatarRecurso(await respFunc.json(), 'funcionarios');
+        if (respAloc.ok) db.alocacoes = formatarRecurso(await respAloc.json(), 'alocacoes');
+        if (respVeic.ok) db.veiculos = formatarRecurso(await respVeic.json(), 'veiculos');
       } catch (e) {
-        console.error("Erro ao buscar funcionários:", e);
-        db.funcionarios = [];
+        console.error("Erro ao buscar dados de equipe/alocações:", e);
       }
 
       return `
-        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-card p-4 rounded-2xl border border-brand-border">
           <div>
             <h3 class="text-sm font-bold text-white uppercase tracking-wider">Equipe & Vinculação aos Veículos</h3>
             <p class="text-xs text-zinc-400">Controle de colaboradores e alocação de frota (RF01/RF03)</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="abrirModalFuncionario()" class="px-4 py-2 bg-brand-yellow hover:bg-brand-hoverYellow text-black text-xs font-bold rounded-xl shadow flex items-center gap-2">
+              <i class="fa-solid fa-user-plus"></i> Novo Colaborador
+            </button>
+            <button onclick="abrirModalAlocacao()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-brand-yellow border border-brand-yellow/30 text-xs font-bold rounded-xl shadow flex items-center gap-2">
+              <i class="fa-solid fa-key"></i> Vincular Veículo
+            </button>
           </div>
         </div>
 
@@ -1039,12 +1073,17 @@
             </h4>
             <div class="space-y-3">
               ${db.funcionarios.map(f => `
-                <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
-                  <div>
-                    <p class="text-xs font-bold text-white">${escaparHtml(f.nome)}</p>
-                    <p class="text-[10px] text-zinc-400">${escaparHtml(f.cargo)} • ${escaparHtml(f.telefone || f.email)}</p>
+                <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-white truncate">${escaparHtml(f.nome)}</p>
+                    <p class="text-[10px] text-zinc-400 truncate">${escaparHtml(f.cargo)} • ${escaparHtml(f.telefone || f.email)}</p>
+                    ${f.cpf ? `<p class="text-[10px] text-zinc-500 font-mono">CPF: ${escaparHtml(f.cpf)}</p>` : ''}
                   </div>
-                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400">${escaparHtml(f.situacao || 'Ativo')}</span>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${f.situacao === 'Inativo' ? 'bg-zinc-800 text-zinc-400' : 'bg-emerald-500/20 text-emerald-400'}">${escaparHtml(f.situacao || 'Ativo')}</span>
+                    <button onclick="editarFuncionario(${f.id})" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg" title="Editar"><i class="fa-solid fa-pen text-[11px]"></i></button>
+                    <button onclick="excluirFuncionario(${f.id})" class="p-1.5 bg-red-950 hover:bg-red-900 text-red-400 rounded-lg" title="Excluir"><i class="fa-solid fa-trash text-[11px]"></i></button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -1059,12 +1098,16 @@
                 const func = db.funcionarios.find(f => f.id === a.id_funcionario || f.id === a.funcionarioId);
                 const veic = db.veiculos.find(v => v.id === a.id_veiculo || v.id === a.veiculoId);
                 return `
-                  <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between">
-                    <div>
-                      <p class="text-xs font-bold text-white">${escaparHtml(func ? func.nome : 'N/A')}</p>
+                  <div class="p-3 bg-zinc-950/60 rounded-xl border border-zinc-800 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-xs font-bold text-white truncate">${escaparHtml(func ? func.nome : 'N/A')}</p>
                       <p class="text-[10px] text-brand-yellow font-mono">Veículo: ${escaparHtml(veic ? veic.placa + ' (' + veic.modelo + ')' : 'N/A')}</p>
+                      ${a.dataInicio ? `<p class="text-[10px] text-zinc-500">Início: ${escaparHtml(a.dataInicio)}</p>` : ''}
                     </div>
-                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${a.situacao === 'Ativa' ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-400'}">${escaparHtml(a.situacao)}</span>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${a.situacao === 'Ativa' ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-400'}">${escaparHtml(a.situacao)}</span>
+                      ${a.situacao === 'Ativa' ? `<button onclick="encerrarAlocacao(${a.id})" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold rounded-lg">Encerrar</button>` : ''}
+                    </div>
                   </div>
                 `;
               }).join('')}
@@ -1072,6 +1115,180 @@
           </div>
         </div>
       `;
+    }
+
+    function abrirModalFuncionario(func = null) {
+      const eEdicao = !!func;
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-brand-yellow"></i> ${eEdicao ? 'Editar Colaborador' : 'Cadastrar Colaborador'}
+            </h4>
+            <button onclick="fecharModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form onsubmit="salvarFuncionario(event, ${eEdicao ? func.id : 'null'})" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Nome Completo</label>
+              <input type="text" id="f-nome" value="${escaparHtml(eEdicao ? func.nome : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="Ex: João da Silva">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">CPF</label>
+                <input type="text" id="f-cpf" value="${escaparHtml(eEdicao ? (func.cpf || '') : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white font-mono" placeholder="000.000.000-00">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Telefone</label>
+                <input type="text" id="f-telefone" value="${escaparHtml(eEdicao ? (func.telefone || '') : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="(18) 99999-9999">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">E-mail</label>
+                <input type="email" id="f-email" value="${escaparHtml(eEdicao ? (func.email || '') : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="nome@kemotutaxi.com.br">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Cargo / Função</label>
+                <select id="f-cargo" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                  <option value="Motorista Titular" ${eEdicao && func.cargo === 'Motorista Titular' ? 'selected' : ''}>Motorista Titular</option>
+                  <option value="Motorista Noturno" ${eEdicao && func.cargo === 'Motorista Noturno' ? 'selected' : ''}>Motorista Noturno</option>
+                  <option value="Motorista Reserva" ${eEdicao && func.cargo === 'Motorista Reserva' ? 'selected' : ''}>Motorista Reserva</option>
+                  <option value="Gestor de Frota" ${eEdicao && func.cargo === 'Gestor de Frota' ? 'selected' : ''}>Gestor de Frota</option>
+                  <option value="Analista Operacional" ${eEdicao && func.cargo === 'Analista Operacional' ? 'selected' : ''}>Analista Operacional</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Situação</label>
+              <select id="f-situacao" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                <option value="Ativo" ${!eEdicao || func.situacao === 'Ativo' ? 'selected' : ''}>Ativo</option>
+                <option value="Inativo" ${eEdicao && func.situacao === 'Inativo' ? 'selected' : ''}>Inativo</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-zinc-800 text-xs text-zinc-300 font-semibold rounded-xl">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-brand-yellow text-black text-xs font-bold rounded-xl shadow">Salvar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    async function salvarFuncionario(e, id) {
+      e.preventDefault();
+      const payload = {
+        nome: document.getElementById('f-nome').value.trim(),
+        cpf: document.getElementById('f-cpf').value.trim(),
+        telefone: document.getElementById('f-telefone').value.trim(),
+        email: document.getElementById('f-email').value.trim().toLowerCase(),
+        cargo: document.getElementById('f-cargo').value,
+        situacao: document.getElementById('f-situacao').value
+      };
+      try {
+        const path = id ? `/api/funcionarios/${id}` : '/api/funcionarios';
+        await apiFetch(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+        fecharModal();
+        await alternarAba('funcionarios');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível salvar o colaborador.');
+      }
+    }
+
+    function editarFuncionario(id) {
+      const f = db.funcionarios.find(x => x.id === id);
+      if (f) abrirModalFuncionario(f);
+    }
+
+    async function excluirFuncionario(id) {
+      if (!confirm('Deseja realmente remover este colaborador?')) return;
+      try {
+        await apiFetch(`/api/funcionarios/${id}`, { method: 'DELETE' });
+        await alternarAba('funcionarios');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível excluir o colaborador.');
+      }
+    }
+
+    function abrirModalAlocacao() {
+      const modal = document.getElementById('modal-container');
+      const hoje = new Date().toISOString().slice(0, 10);
+      modal.innerHTML = `
+        <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-key text-brand-yellow"></i> Vincular Motorista ao Veículo
+            </h4>
+            <button onclick="fecharModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form onsubmit="salvarAlocacao(event)" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Colaborador</label>
+              <select id="a-funcionario" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                ${db.funcionarios.map(f => `<option value="${f.id}">${escaparHtml(f.nome)} (${escaparHtml(f.cargo)})</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Veículo</label>
+              <select id="a-veiculo" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                ${db.veiculos.map(v => `<option value="${v.id}">${escaparHtml(v.placa)} - ${escaparHtml(v.marca)} ${escaparHtml(v.modelo)} (${escaparHtml(v.situacao)})</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Data de Início</label>
+              <input type="date" id="a-data" value="${hoje}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-zinc-800 text-xs text-zinc-300 font-semibold rounded-xl">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-brand-yellow text-black text-xs font-bold rounded-xl shadow">Vincular</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    async function salvarAlocacao(e) {
+      e.preventDefault();
+      const idFuncionario = parseInt(document.getElementById('a-funcionario').value, 10);
+      const idVeiculo = parseInt(document.getElementById('a-veiculo').value, 10);
+      const dataInicio = document.getElementById('a-data').value;
+      try {
+        await apiFetch('/api/alocacoes', {
+          method: 'POST',
+          body: JSON.stringify({
+            funcionario: { idFuncionario },
+            veiculo: { idVeiculo },
+            dataInicio,
+            situacao: 'Ativa'
+          })
+        });
+        fecharModal();
+        await alternarAba('funcionarios');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível criar a vinculação.');
+      }
+    }
+
+    async function encerrarAlocacao(id) {
+      const aloc = db.alocacoes.find(item => item.id === id);
+      if (!aloc) return;
+      try {
+        await apiFetch(`/api/alocacoes/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            funcionario: { idFuncionario: aloc.id_funcionario },
+            veiculo: { idVeiculo: aloc.id_veiculo },
+            dataInicio: aloc.dataInicio,
+            dataFim: new Date().toISOString().slice(0, 10),
+            situacao: 'Encerrada'
+          })
+        });
+        await alternarAba('funcionarios');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível encerrar a vinculação.');
+      }
     }
 
     // --- RENDERIZAÇÃO: MANUTENÇÕES --- //
@@ -1087,11 +1304,14 @@
       }
 
       return `
-        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-card p-4 rounded-2xl border border-brand-border">
           <div>
             <h3 class="text-sm font-bold text-white uppercase tracking-wider">Histórico de Manutenções</h3>
             <p class="text-xs text-zinc-400">Serviços preventivos e corretivos da Kemotu Táxi (RF06)</p>
           </div>
+          <button onclick="abrirModalManutencao()" class="px-4 py-2 bg-brand-yellow hover:bg-brand-hoverYellow text-black text-xs font-bold rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Nova Manutenção
+          </button>
         </div>
 
         <div class="bg-brand-card border border-brand-border rounded-2xl overflow-hidden">
@@ -1105,12 +1325,16 @@
                   <th class="p-4">Data Prevista</th>
                   <th class="p-4">Custo (R$)</th>
                   <th class="p-4">Situação</th>
+                  <th class="p-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-800/60 font-medium">
                 ${db.manutencoes.map(m => {
                   const veic = db.veiculos.find(v => v.id === m.id_veiculo || v.id === m.veiculoId);
                   const dataPrev = m.data_prevista || m.dataPrevista || 'N/A';
+                  let badge = 'bg-zinc-800 text-amber-400';
+                  if (m.situacao === 'Concluída') badge = 'bg-emerald-500/20 text-emerald-400';
+                  if (m.situacao === 'Programada') badge = 'bg-blue-500/20 text-blue-400';
                   return `
                     <tr class="hover:bg-zinc-900/50">
                       <td class="p-4 font-mono font-bold text-brand-yellow">${escaparHtml(veic ? veic.placa : 'N/A')}</td>
@@ -1118,7 +1342,11 @@
                       <td class="p-4 text-zinc-300 max-w-xs truncate">${escaparHtml(m.descricao)}</td>
                       <td class="p-4 text-zinc-400">${escaparHtml(dataPrev)}</td>
                       <td class="p-4 font-mono text-emerald-400">R$ ${Number(m.valor).toFixed(2)}</td>
-                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-amber-400">${escaparHtml(m.situacao)}</span></td>
+                      <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${escaparHtml(m.situacao)}</span></td>
+                      <td class="p-4 text-right space-x-2">
+                        <button onclick="editarManutencao(${m.id})" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="excluirManutencao(${m.id})" class="p-1.5 bg-red-950 hover:bg-red-900 text-red-400 rounded-lg" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                      </td>
                     </tr>
                   `;
                 }).join('')}
@@ -1127,6 +1355,108 @@
           </div>
         </div>
       `;
+    }
+
+    function abrirModalManutencao(manut = null) {
+      const eEdicao = !!manut;
+      const modal = document.getElementById('modal-container');
+      const hoje = new Date().toISOString().slice(0, 10);
+      modal.innerHTML = `
+        <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-wrench text-brand-yellow"></i> ${eEdicao ? 'Editar Manutenção' : 'Registrar Manutenção'}
+            </h4>
+            <button onclick="fecharModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form onsubmit="salvarManutencao(event, ${eEdicao ? manut.id : 'null'})" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Veículo</label>
+              <select id="m-veiculo" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                ${db.veiculos.map(v => `<option value="${v.id}" ${eEdicao && (manut.id_veiculo === v.id) ? 'selected' : ''}>${escaparHtml(v.placa)} - ${escaparHtml(v.marca)} ${escaparHtml(v.modelo)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Tipo</label>
+                <select id="m-tipo" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                  <option value="Preventiva" ${eEdicao && manut.tipo === 'Preventiva' ? 'selected' : ''}>Preventiva</option>
+                  <option value="Corretiva" ${eEdicao && manut.tipo === 'Corretiva' ? 'selected' : ''}>Corretiva</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Data Prevista</label>
+                <input type="date" id="m-data" value="${eEdicao ? (manut.data_prevista || hoje) : hoje}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Descrição do Serviço</label>
+              <input type="text" id="m-descricao" value="${escaparHtml(eEdicao ? manut.descricao : '')}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="Ex: Troca de óleo e filtros">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Custo (R$)</label>
+                <input type="number" step="0.01" id="m-valor" value="${eEdicao ? manut.valor : ''}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="0.00">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Situação</label>
+                <select id="m-situacao" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                  <option value="Programada" ${eEdicao && manut.situacao === 'Programada' ? 'selected' : ''}>Programada</option>
+                  <option value="Em andamento" ${eEdicao && manut.situacao === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                  <option value="Concluída" ${eEdicao && manut.situacao === 'Concluída' ? 'selected' : ''}>Concluída</option>
+                  <option value="Cancelada" ${eEdicao && manut.situacao === 'Cancelada' ? 'selected' : ''}>Cancelada</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-zinc-800 text-xs text-zinc-300 font-semibold rounded-xl">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-brand-yellow text-black text-xs font-bold rounded-xl shadow">Salvar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    async function salvarManutencao(e, id) {
+      e.preventDefault();
+      const idVeiculo = parseInt(document.getElementById('m-veiculo').value, 10);
+      const tipoManutencao = document.getElementById('m-tipo').value;
+      const dataPrevista = document.getElementById('m-data').value;
+      const descricao = document.getElementById('m-descricao').value.trim();
+      const valor = parseFloat(document.getElementById('m-valor').value);
+      const situacao = ({ 'Programada': 'Programada', 'Em andamento': 'Em_andamento', 'Concluída': 'Concluida', 'Cancelada': 'Cancelada' })[document.getElementById('m-situacao').value];
+      const payload = {
+        veiculo: { idVeiculo },
+        tipoManutencao,
+        descricao,
+        dataPrevista,
+        valor,
+        situacao
+      };
+      try {
+        const path = id ? `/api/manutencoes/${id}` : '/api/manutencoes';
+        await apiFetch(path, { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+        fecharModal();
+        await alternarAba('manutencoes');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível salvar a manutenção.');
+      }
+    }
+
+    function editarManutencao(id) {
+      const m = db.manutencoes.find(x => x.id === id);
+      if (m) abrirModalManutencao(m);
+    }
+
+    async function excluirManutencao(id) {
+      if (!confirm('Deseja realmente excluir este registro de manutenção?')) return;
+      try {
+        await apiFetch(`/api/manutencoes/${id}`, { method: 'DELETE' });
+        await alternarAba('manutencoes');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível excluir a manutenção.');
+      }
     }
 
     // --- RENDERIZAÇÃO: OBRIGAÇÕES LEGAIS --- //
@@ -1142,11 +1472,14 @@
       }
 
       return `
-        <div class="bg-brand-card p-4 rounded-2xl border border-brand-border flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-card p-4 rounded-2xl border border-brand-border">
           <div>
             <h3 class="text-sm font-bold text-white uppercase tracking-wider">Serviços Legais, IPVA & Multas</h3>
             <p class="text-xs text-zinc-400">Controle de impostos e obrigações da frota (RF05)</p>
           </div>
+          <button onclick="abrirModalObrigacao()" class="px-4 py-2 bg-brand-yellow hover:bg-brand-hoverYellow text-black text-xs font-bold rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Nova Obrigação / Multa
+          </button>
         </div>
 
         <div class="bg-brand-card border border-brand-border rounded-2xl overflow-hidden">
@@ -1160,7 +1493,7 @@
                   <th class="p-4">Vencimento</th>
                   <th class="p-4">Valor</th>
                   <th class="p-4">Situação</th>
-                  <th class="p-4 text-right">Ação</th>
+                  <th class="p-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-800/60 font-medium">
@@ -1180,10 +1513,11 @@
                       <td class="p-4 text-zinc-400">${escaparHtml(venc)}</td>
                       <td class="p-4 font-mono text-white">R$ ${Number(o.valor).toFixed(2)}</td>
                       <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badge}">${escaparHtml(o.situacao)}</span></td>
-                      <td class="p-4 text-right">
+                      <td class="p-4 text-right space-x-1">
                         ${o.situacao !== 'Pago' ? `
-                          <button onclick="quitarObrigacao(${o.id})" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">Pagar</button>
-                        ` : '<span class="text-zinc-500 text-[10px]">Quitado</span>'}
+                          <button onclick="quitarObrigacao(${o.id})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">Pagar</button>
+                        ` : '<span class="text-zinc-500 text-[10px] mr-1">Quitado</span>'}
+                        <button onclick="excluirObrigacao(${o.id})" class="p-1.5 bg-red-950 hover:bg-red-900 text-red-400 rounded-lg" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                       </td>
                     </tr>
                   `;
@@ -1193,6 +1527,98 @@
           </div>
         </div>
       `;
+    }
+
+    function abrirModalObrigacao() {
+      const modal = document.getElementById('modal-container');
+      const hoje = new Date().toISOString().slice(0, 10);
+      modal.innerHTML = `
+        <div class="bg-brand-card border border-brand-border rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-file-invoice-dollar text-brand-yellow"></i> Registrar Obrigação / Multa
+            </h4>
+            <button onclick="fecharModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form onsubmit="salvarObrigacao(event)" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Veículo</label>
+              <select id="o-veiculo" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                ${db.veiculos.map(v => `<option value="${v.id}">${escaparHtml(v.placa)} - ${escaparHtml(v.marca)} ${escaparHtml(v.modelo)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Tipo / Descrição</label>
+                <input type="text" id="o-tipo" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="Ex: IPVA, Licenciamento, Multa">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Exercício (Ano)</label>
+                <input type="number" id="o-exercicio" value="2026" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Vencimento</label>
+                <input type="date" id="o-vencimento" value="${hoje}" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Valor (R$)</label>
+                <input type="number" step="0.01" id="o-valor" required class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white" placeholder="0.00">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Situação</label>
+              <select id="o-situacao" class="w-full px-3 py-2 glass-input rounded-xl text-xs text-white">
+                <option value="Pendente">Pendente</option>
+                <option value="Pago">Pago</option>
+                <option value="Vencido">Vencido</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-zinc-800 text-xs text-zinc-300 font-semibold rounded-xl">Cancelar</button>
+              <button type="submit" class="px-4 py-2 bg-brand-yellow text-black text-xs font-bold rounded-xl shadow">Salvar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    async function salvarObrigacao(e) {
+      e.preventDefault();
+      const idVeiculo = parseInt(document.getElementById('o-veiculo').value, 10);
+      const tipoObrigacao = document.getElementById('o-tipo').value.trim();
+      const exercicio = parseInt(document.getElementById('o-exercicio').value, 10);
+      const dataVencimento = document.getElementById('o-vencimento').value;
+      const valor = parseFloat(document.getElementById('o-valor').value);
+      const situacao = document.getElementById('o-situacao').value;
+      const payload = {
+        veiculo: { idVeiculo },
+        tipoObrigacao,
+        exercicio,
+        valor,
+        dataVencimento,
+        dataPagamento: situacao === 'Pago' ? new Date().toISOString().slice(0, 10) : null,
+        situacao
+      };
+      try {
+        await apiFetch('/api/obrigacoes', { method: 'POST', body: JSON.stringify(payload) });
+        fecharModal();
+        await alternarAba('obrigacoes');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível salvar a obrigação.');
+      }
+    }
+
+    async function excluirObrigacao(id) {
+      if (!confirm('Deseja realmente excluir esta obrigação?')) return;
+      try {
+        await apiFetch(`/api/obrigacoes/${id}`, { method: 'DELETE' });
+        await alternarAba('obrigacoes');
+      } catch (erro) {
+        alert(erro.message || 'Não foi possível excluir a obrigação.');
+      }
     }
 
     async function quitarObrigacao(id) {
